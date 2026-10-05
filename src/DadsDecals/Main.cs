@@ -26,6 +26,7 @@ namespace DadsDecals
             Mod = modEntry;
             try
             {
+                Assets.Load();
                 Directory.CreateDirectory(DecalsDir);
                 Library = new DecalLibrary(DecalsDir);
                 Library.Reload();
@@ -34,10 +35,11 @@ namespace DadsDecals
                 harmony.PatchAll(Assembly.GetExecutingAssembly());
 
                 CarLifecycle.Hook();
+                Placement.Create();
 
                 panel = new DecalPanel();
                 ModToolbarAPI.Register(modEntry)
-                    .AddPanelControl("Decals", null, "Dad's Decals", panel.Draw, "Dad's Decals", 360, 480)
+                    .AddPanelControl("Decals", null, "Dad's Decals", panel.Draw, DecalPanel.Title, 380, 560)
                     .Finish();
 
                 modEntry.OnUnload = Unload;
@@ -57,7 +59,10 @@ namespace DadsDecals
             ModToolbarAPI.Unregister(modEntry);
             CarLifecycle.Unhook();
             harmony?.UnpatchAll(modEntry.Info.Id);
+            if (Placement.Instance != null) UnityEngine.Object.Destroy(Placement.Instance.gameObject);
+            foreach (var r in UnityEngine.Object.FindObjectsOfType<DecalRenderer>()) UnityEngine.Object.Destroy(r);
             Library?.Dispose();
+            Assets.Unload();
             return true;
         }
     }

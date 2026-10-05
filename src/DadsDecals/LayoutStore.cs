@@ -69,6 +69,15 @@ namespace DadsDecals
             Main.Log.Log($"Loco {layout.CarId} was deleted; kept its {layout.Decals.Count} decal(s) as an orphaned layout");
         }
 
+        /// <summary>Adds an orphaned layout's decals to this car and drops the orphan.</summary>
+        public void ApplyOrphan(LocoLayout orphan, TrainCar car)
+        {
+            GetOrCreate(car).Decals.AddRange(orphan.Decals);
+            orphans.Remove(orphan);
+        }
+
+        public void ForgetOrphan(LocoLayout orphan) => orphans.Remove(orphan);
+
         public void Clear()
         {
             layouts.Clear();

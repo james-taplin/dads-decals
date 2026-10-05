@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net48</TargetFramework>
@@ -30,6 +30,8 @@
     <Reference Include="UnityEngine.IMGUIModule" HintPath="$(DvManaged)\UnityEngine.IMGUIModule.dll" Private="false" />
     <Reference Include="UnityEngine.ImageConversionModule" HintPath="$(DvManaged)\UnityEngine.ImageConversionModule.dll" Private="false" />
     <Reference Include="UnityEngine.PhysicsModule" HintPath="$(DvManaged)\UnityEngine.PhysicsModule.dll" Private="false" />
+    <Reference Include="UnityEngine.AssetBundleModule" HintPath="$(DvManaged)\UnityEngine.AssetBundleModule.dll" Private="false" />
+    <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(DvManaged)\UnityEngine.InputLegacyModule.dll" Private="false" />
     <!-- Mod loader -->
     <Reference Include="UnityModManager" HintPath="$(DvManaged)\UnityModManager\UnityModManager.dll" Private="false" />
     <Reference Include="0Harmony" HintPath="$(DvManaged)\UnityModManager\0Harmony.dll" Private="false" />
@@ -39,6 +41,7 @@
 
   <ItemGroup>
     <None Include="info.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Bundles\dadsdecals" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <!-- dotnet build -p:Deploy=true  copies the mod into the game's Mods folder -->
@@ -47,6 +50,7 @@
       <DeployFiles Include="$(OutDir)DadsDecals.dll;$(OutDir)info.json" />
     </ItemGroup>
     <Copy SourceFiles="@(DeployFiles)" DestinationFolder="$(DvMods)\DadsDecals" />
+    <Copy SourceFiles="$(OutDir)Bundles\dadsdecals" DestinationFolder="$(DvMods)\DadsDecals\Bundles" />
     <MakeDir Directories="$(DvMods)\DadsDecals\Decals" />
   </Target>
 

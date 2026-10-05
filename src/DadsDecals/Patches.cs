@@ -54,11 +54,15 @@ namespace DadsDecals
             if (spawner == null) return;   // not in a world yet; LoadingFinished will call us again
             spawner.CarSpawned += OnCarSpawned;
             spawner.CarAboutToBeDeleted += OnCarDeleted;
+            // Cars from the save were spawned before LoadingFinished fired.
+            foreach (var car in UnityEngine.Object.FindObjectsOfType<TrainCar>())
+                OnCarSpawned(car);
         }
 
         private static void OnCarSpawned(TrainCar car)
         {
-            // Milestone 3+: build decal meshes for this car's saved layout.
+            if (car.logicCar != null && Main.Layouts.Get(car.CarGUID) != null)
+                DecalRenderer.Ensure(car);
         }
 
         private static void OnCarDeleted(TrainCar car)

@@ -12,6 +12,25 @@ namespace DadsDecals
         public string Category = "";
         public string Name = "";
         public Texture2D Texture = null!;
+
+        private Material? material;
+
+        /// <summary>Projector material for this image, shared by every decal that uses it.</summary>
+        public Material? Material
+        {
+            get
+            {
+                if (material == null && Assets.DecalShader != null)
+                    material = new Material(Assets.DecalShader) { name = "DadsDecal " + Key, mainTexture = Texture };
+                return material;
+            }
+        }
+
+        public void Destroy()
+        {
+            if (material != null) UnityEngine.Object.Destroy(material);
+            if (Texture != null) UnityEngine.Object.Destroy(Texture);
+        }
     }
 
     /// <summary>Loads PNGs from the user's Decals folder. Textures are shared between all decals using them.</summary>
@@ -72,8 +91,7 @@ namespace DadsDecals
 
         public void Dispose()
         {
-            foreach (var img in images.Values)
-                if (img.Texture != null) UnityEngine.Object.Destroy(img.Texture);
+            foreach (var img in images.Values) img.Destroy();
             images.Clear();
         }
     }

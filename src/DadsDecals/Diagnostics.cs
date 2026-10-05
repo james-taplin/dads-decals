@@ -40,7 +40,7 @@ namespace DadsDecals
                 .Select(r => (r, f: r.GetComponent<MeshFilter>()))
                 .Where(x => x.f != null && x.f.sharedMesh != null)
                 .Select(x => (x.r, mesh: x.f.sharedMesh, path: Path(root, x.r.transform)))
-                .Where(x => !IsExcluded(x.r, x.path))
+                .Where(x => !DecalTargets.IsExcluded(x.r, x.path))
                 .OrderByDescending(x => x.mesh.vertexCount)
                 .ToList();
 
@@ -78,22 +78,6 @@ namespace DadsDecals
 
             Main.Log.Log(summary + "Full report: " + file);
             return summary;
-        }
-
-        private static bool IsExcluded(MeshRenderer r, string path)
-        {
-            var p = path.ToLowerInvariant();
-            if (p.Contains("[interior") || p.Contains("broken") || p.Contains("textmeshpro") || p.Contains("carplate")) return true;
-            if (p.Contains("[car plate")) return true;
-            // LOD1+ (both "_LOD1" naming and Unity LODGroup membership)
-            if (System.Text.RegularExpressions.Regex.IsMatch(p, @"lod[1-9]")) return true;
-            var group = r.GetComponentInParent<LODGroup>();
-            if (group != null)
-            {
-                var lods = group.GetLODs();
-                if (lods.Length > 0 && !lods[0].renderers.Contains(r) && lods.Skip(1).Any(l => l.renderers.Contains(r))) return true;
-            }
-            return false;
         }
 
         public static string Path(Transform root, Transform t)
