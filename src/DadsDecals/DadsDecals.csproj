@@ -1,0 +1,54 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AssemblyName>DadsDecals</AssemblyName>
+    <RootNamespace>DadsDecals</RootNamespace>
+    <Version>0.1.0</Version>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <!-- Override on the command line or in a gitignored Directory.Build.user.props: -p:DvInstallDir=... -->
+    <DvInstallDir Condition="'$(DvInstallDir)' == ''">B:\SteamLibrary\steamapps\common\Derail Valley</DvInstallDir>
+    <DvManaged>$(DvInstallDir)\DerailValley_Data\Managed</DvManaged>
+    <DvMods>$(DvInstallDir)\Mods</DvMods>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Game assemblies -->
+    <Reference Include="Assembly-CSharp" HintPath="$(DvManaged)\Assembly-CSharp.dll" Private="false" />
+    <Reference Include="DV.ThingTypes" HintPath="$(DvManaged)\DV.ThingTypes.dll" Private="false" />
+    <Reference Include="DV.Utils" HintPath="$(DvManaged)\DV.Utils.dll" Private="false" />
+    <Reference Include="Newtonsoft.Json" HintPath="$(DvManaged)\Newtonsoft.Json.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(DvManaged)\UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(DvManaged)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityEngine.IMGUIModule" HintPath="$(DvManaged)\UnityEngine.IMGUIModule.dll" Private="false" />
+    <Reference Include="UnityEngine.ImageConversionModule" HintPath="$(DvManaged)\UnityEngine.ImageConversionModule.dll" Private="false" />
+    <Reference Include="UnityEngine.PhysicsModule" HintPath="$(DvManaged)\UnityEngine.PhysicsModule.dll" Private="false" />
+    <!-- Mod loader -->
+    <Reference Include="UnityModManager" HintPath="$(DvManaged)\UnityModManager\UnityModManager.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(DvManaged)\UnityModManager\0Harmony.dll" Private="false" />
+    <!-- Dependency mods -->
+    <Reference Include="DerailValleyModToolbar" HintPath="$(DvMods)\DerailValleyModToolbar\DerailValleyModToolbar.dll" Private="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="info.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <!-- dotnet build -p:Deploy=true  copies the mod into the game's Mods folder -->
+  <Target Name="DeployToGame" AfterTargets="Build" Condition="'$(Deploy)' == 'true'">
+    <ItemGroup>
+      <DeployFiles Include="$(OutDir)DadsDecals.dll;$(OutDir)info.json" />
+    </ItemGroup>
+    <Copy SourceFiles="@(DeployFiles)" DestinationFolder="$(DvMods)\DadsDecals" />
+    <MakeDir Directories="$(DvMods)\DadsDecals\Decals" />
+  </Target>
+
+</Project>
+
