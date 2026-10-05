@@ -67,6 +67,7 @@ namespace DadsDecals
 
         private static void OnCarDeleted(TrainCar car)
         {
+            Placement.Instance?.ForgetCar(car);
             Main.Layouts.OnCarDeleted(car);
         }
     }

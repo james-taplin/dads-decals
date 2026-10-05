@@ -13,40 +13,50 @@ namespace DadsDecals
         private bool showDebug;
         private bool confirmClear;
 
-        private static TrainCar? CurrentCar =>
-            PlayerManager.Car != null ? PlayerManager.Car : PlayerManager.LastLoco;
+        /// <summary>The car the panel edits: the one last pointed at while placing, else the one you're on, else your last loco.</summary>
+        private static TrainCar? CurrentCar
+        {
+            get
+            {
+                var targeted = Placement.Instance.Car;
+                if (targeted != null && targeted.logicCar != null) return targeted;
+                if (PlayerManager.Car != null) return PlayerManager.Car;
+                return PlayerManager.LastLoco;
+            }
+        }
 
         public void Draw(Rect rect)
         {
             var car = CurrentCar;
             var placement = Placement.Instance;
-            if (placement.Armed && placement.Car != car) placement.Disarm();
 
             if (Assets.DecalShader == null)
                 GUILayout.Label("Decal shader failed to load - see the mod log.");
 
+            LocoLayout? layout = null;
             if (car == null || car.logicCar == null)
             {
-                GUILayout.Label("Get on a loco to edit its decals.");
-                DrawOrphans(null);
-                return;
+                car = null;
+                GUILayout.Label("Pick a decal, then point at any loco, tender or wagon.");
+            }
+            else
+            {
+                layout = Main.Layouts.Get(car.CarGUID);
+                GUILayout.Label($"Editing: {car.ID}  ({car.carLivery?.id})  - {layout?.Decals.Count ?? 0} decal(s)");
             }
 
-            var layout = Main.Layouts.Get(car.CarGUID);
-            GUILayout.Label($"{car.ID}  ({car.carLivery?.id})  - {layout?.Decals.Count ?? 0} decal(s)");
-
             if (placement.Armed) DrawPlacementControls(placement);
-            DrawPalette(rect, car, placement);
+            DrawPalette(rect, placement);
             DrawPlaced(layout);
             DrawOrphans(car);
-            DrawDebug(car);
+            if (car != null) DrawDebug(car);
         }
 
         private void DrawPlacementControls(Placement p)
         {
             GUILayout.Space(6);
             GUILayout.Label($"Placing: {p.Image}");
-            GUILayout.Label("Left-click the loco to place. Right-click to stop.");
+            GUILayout.Label("Left-click any loco, tender or wagon to place. Right-click to stop.");
 
             var oldWidth = p.Width;
             p.Width = Slider("Width (m)", p.Width, 0.05f, 5f);
@@ -78,7 +88,7 @@ namespace DadsDecals
             return value;
         }
 
-        private void DrawPalette(Rect rect, TrainCar car, Placement placement)
+        private void DrawPalette(Rect rect, Placement placement)
         {
             GUILayout.Space(8);
             GUILayout.BeginHorizontal();
@@ -108,7 +118,7 @@ namespace DadsDecals
                         if (GUILayout.Toggle(selected, content, "Button", GUILayout.Width(ThumbSize), GUILayout.Height(ThumbSize)) != selected)
                         {
                             if (selected) placement.Disarm();
-                            else placement.Arm(car, img.Key);
+                            else placement.Arm(img.Key);
                         }
                     }
                     GUILayout.EndHorizontal();
@@ -120,7 +130,7 @@ namespace DadsDecals
         {
             if (layout == null || layout.Decals.Count == 0) return;
             GUILayout.Space(8);
-            GUILayout.Label("On this loco");
+            GUILayout.Label($"On {CurrentCar?.ID}");
             for (var i = 0; i < layout.Decals.Count; i++)
             {
                 GUILayout.BeginHorizontal();

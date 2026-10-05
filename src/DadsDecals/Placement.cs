@@ -13,6 +13,8 @@ namespace DadsDecals
         public static Placement Instance { get; private set; } = null!;
 
         public bool Armed { get; private set; }
+
+        /// <summary>The car under the mouse while placing (loco, tender, wagon...). Kept after placing stops.</summary>
         public TrainCar? Car { get; private set; }
 
         // Settings for the next decal, edited from the panel.
@@ -38,10 +40,9 @@ namespace DadsDecals
             Instance = go.AddComponent<Placement>();
         }
 
-        public void Arm(TrainCar car, string image)
+        public void Arm(string image)
         {
             Disarm();
-            Car = car;
             Image = image;
             Armed = true;
             var tex = Main.Library.TryGet(image, out var img) ? img.Texture : null;
@@ -50,39 +51,53 @@ namespace DadsDecals
 
         public void Disarm()
         {
-            if (Car != null)
-            {
-                var r = Car.GetComponent<DecalRenderer>();
-                if (r != null) r.Ghost = null;
-            }
+            ClearGhost();
             Armed = false;
+            hasHit = false;
+        }
+
+        /// <summary>Forget the targeted car, e.g. when it is deleted.</summary>
+        public void ForgetCar(TrainCar car)
+        {
+            if (Car != car) return;
+            ClearGhost();
             Car = null;
             hasHit = false;
         }
 
+        private void ClearGhost()
+        {
+            if (Car == null) return;
+            var r = Car.GetComponent<DecalRenderer>();
+            if (r != null) r.Ghost = null;
+        }
+
         private void Update()
         {
-            if (!Armed || Car == null || Image == null) { if (Armed) Disarm(); return; }
-            var renderer = DecalRenderer.Ensure(Car);
+            if (!Armed || Image == null) return;
 
             var cam = PlayerManager.PlayerCamera;
-            var mouseFree = Cursor.visible;
-            if (cam == null || !mouseFree || MouseOverUi())
+            if (cam == null || !Cursor.visible || MouseOverUi())
             {
-                renderer.Ghost = hasHit ? Fill(ghost) : null;
+                // Keep showing the ghost where it was, so slider changes preview live.
+                if (Car != null) DecalRenderer.Ensure(Car).Ghost = hasHit ? Fill(ghost) : null;
                 return;
             }
 
-            hasHit = RaycastCar(cam.ScreenPointToRay(Input.mousePosition), out var hit);
+            hasHit = RaycastAnyCar(cam.ScreenPointToRay(Input.mousePosition), out var hit, out var hitCar);
+            if (hasHit && hitCar != Car)
+            {
+                ClearGhost();
+                Car = hitCar;
+            }
+            if (Car == null) return;
             if (hasHit) Pose(hit);
+            var renderer = DecalRenderer.Ensure(Car);
             renderer.Ghost = hasHit ? Fill(ghost) : null;
 
             if (Input.GetMouseButtonDown(1)) { Disarm(); return; }
             if (hasHit && Input.GetMouseButtonDown(0))
-            {
-                var layout = Main.Layouts.GetOrCreate(Car);
-                layout.Decals.Add(Copy(Fill(ghost)));
-            }
+                Main.Layouts.GetOrCreate(Car).Decals.Add(Copy(Fill(ghost)));
         }
 
         private Vector3 localPos;
@@ -126,19 +141,23 @@ namespace DadsDecals
             MirrorY = d.MirrorY,
         };
 
-        private bool RaycastCar(Ray ray, out RaycastHit result)
+        /// <summary>Nearest hit on any train car along the ray (skips the player and scenery).</summary>
+        private static bool RaycastAnyCar(Ray ray, out RaycastHit result, out TrainCar? car)
         {
             result = default;
+            car = null;
             var hits = Physics.RaycastAll(ray, 60f, ~0, QueryTriggerInteraction.Ignore);
             var best = float.MaxValue;
             foreach (var h in hits)
             {
                 if (h.distance >= best) continue;
-                if (h.collider.GetComponentInParent<TrainCar>() != Car) continue;
+                var c = h.collider.GetComponentInParent<TrainCar>();
+                if (c == null || c.logicCar == null) continue;
                 best = h.distance;
                 result = h;
+                car = c;
             }
-            return best < float.MaxValue;
+            return car != null;
         }
 
         /// <summary>True when the mouse is over our panel or the toolbar strip, so clicks there don't place decals.</summary>
