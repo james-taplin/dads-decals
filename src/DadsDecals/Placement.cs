@@ -32,6 +32,7 @@ namespace DadsDecals
 
         /// <summary>What the mouse is aiming at, for the panel's readout.</summary>
         public string AimInfo { get; private set; } = "";
+        public string MouseInfo { get; private set; } = "";
 
         // Collision shapes can sit off the visible body, so the box starts this far outside the
         // point we hit and runs inward from there.
@@ -85,8 +86,12 @@ namespace DadsDecals
             if (!Armed || Image == null) return;
 
             var cam = PlayerManager.PlayerCamera;
-            if (cam == null || !Cursor.visible || MouseOverUi())
+            var overUi = MouseOverUi();
+            MouseInfo = $"mouse {Input.mousePosition.x:0},{Input.mousePosition.y:0} of {Screen.width}x{Screen.height}, " +
+                        $"cursor visible={Cursor.visible} lock={Cursor.lockState}, over UI={overUi}, camera={(cam != null ? cam.name : "none")}";
+            if (cam == null || !Cursor.visible || overUi)
             {
+                AimInfo = cam == null ? "waiting: no player camera" : !Cursor.visible ? "waiting: cursor hidden" : "waiting: mouse is over the panel/toolbar";
                 // Keep showing the ghost where it was, so slider changes preview live.
                 if (Car != null) DecalRenderer.Ensure(Car).Ghost = hasHit ? Fill(ghost) : null;
                 return;

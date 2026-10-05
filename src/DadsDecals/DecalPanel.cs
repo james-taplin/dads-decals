@@ -58,7 +58,7 @@ namespace DadsDecals
             GUILayout.Label($"Placing: {p.Image}");
             GUILayout.Label("Left-click any loco, tender or wagon to place. Right-click to stop.");
             var ghostDraws = p.Car != null && p.Car.GetComponent<DecalRenderer>() is DecalRenderer dr ? dr.GhostDraws : 0;
-            GUILayout.Label($"Aiming at: {p.AimInfo}\nPreview drawn on {ghostDraws} part(s)");
+            GUILayout.Label($"Aiming at: {p.AimInfo}\nPreview drawn on {ghostDraws} part(s)\n{p.MouseInfo}");
 
             var oldWidth = p.Width;
             p.Width = Slider("Width (m)", p.Width, 0.05f, 5f);
