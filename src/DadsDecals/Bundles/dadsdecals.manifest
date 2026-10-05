@@ -1,9 +1,9 @@
 ManifestFileVersion: 0
-CRC: 3999331075
+CRC: 4193088200
 Hashes:
   AssetFileHash:
     serializedVersion: 2
-    Hash: 2882ee3b46eedf4047ed563da5c3a07e
+    Hash: 1543d302c22c38c04fe4103941e08ca4
   TypeTreeHash:
     serializedVersion: 2
     Hash: 55d48f4ad9c3b13330b9eb5ee5686477
@@ -14,4 +14,5 @@ ClassTypes:
 SerializeReferenceClassIdentifiers: []
 Assets:
 - Assets/Shaders/DadsDecal.shader
+- Assets/Shaders/DadsTextRender.shader
 Dependencies: []

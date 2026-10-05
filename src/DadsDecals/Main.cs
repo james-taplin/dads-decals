@@ -13,6 +13,7 @@ namespace DadsDecals
         public static UnityModManager.ModEntry.ModLogger Log => Mod.Logger;
 
         public static DecalLibrary Library { get; private set; } = null!;
+        public static DadsSettings Settings { get; private set; } = null!;
         public static LayoutStore Layouts { get; } = new LayoutStore();
 
         /// <summary>User folder for decal PNGs: Mods/DadsDecals/Decals (subfolders = categories).</summary>
@@ -26,6 +27,7 @@ namespace DadsDecals
             Mod = modEntry;
             try
             {
+                Settings = UnityModManager.ModSettings.Load<DadsSettings>(modEntry);
                 Assets.Load();
                 Directory.CreateDirectory(DecalsDir);
                 Library = new DecalLibrary(DecalsDir);
@@ -35,11 +37,11 @@ namespace DadsDecals
                 harmony.PatchAll(Assembly.GetExecutingAssembly());
 
                 CarLifecycle.Hook();
-                Placement.Create();
+                Interaction.Create();
 
                 panel = new DecalPanel();
                 ModToolbarAPI.Register(modEntry)
-                    .AddPanelControl("Decals", null, "Dad's Decals", panel.Draw, DecalPanel.Title, 380, 560)
+                    .AddPanelControl("Decals", null, "Dad's Decals", panel.Draw, DecalPanel.Title, 460, 640)
                     .Finish();
 
                 modEntry.OnUnload = Unload;
@@ -59,7 +61,8 @@ namespace DadsDecals
             ModToolbarAPI.Unregister(modEntry);
             CarLifecycle.Unhook();
             harmony?.UnpatchAll(modEntry.Info.Id);
-            if (Placement.Instance != null) UnityEngine.Object.Destroy(Placement.Instance.gameObject);
+            if (Interaction.Instance != null) UnityEngine.Object.Destroy(Interaction.Instance.gameObject);
+            TextDecals.ClearCache();
             foreach (var r in UnityEngine.Object.FindObjectsOfType<DecalRenderer>()) UnityEngine.Object.Destroy(r);
             Library?.Dispose();
             Assets.Unload();
