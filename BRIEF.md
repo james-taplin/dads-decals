@@ -46,15 +46,74 @@ We use **GPU projection**, the same technique Conformal Decals uses. Our shader 
 
 ## Milestones
 1. ✅ **Skeleton:** UMM mod loads, Toolbar panel, PNG palette, save/load plumbing, diagnostics.
-2. **Shader:** install Unity 2019.4.40, write the projector shader, build the AssetBundle, load it in the mod.
-3. **Placement:** mouse raycast onto the loco, ghost preview, click to place, attached to the right transform.
-4. **Conformal rendering:** projector drawing on overlapped LOD0 renderers; check deferred/HDR lighting and fog match.
-5. **Persistence live:** layouts reapply on `CarSpawned`; orphan re-apply UI.
-6. **Editing UX:** select/move/rotate/scale/delete, undo.
-7. **Templates + export/import.**
-8. **Polish:** tint/opacity/wrap slider, downscaling, docs, Nexus release.
+2. ✅ **Shader:** projector shader in an AssetBundle built with Unity 2019.4.40. It can be checked offline with `ShaderTestRender`.
+3. ✅ **Placement:** mouse raycast through `PlayerManager.ActiveCamera` (so the exterior camera works), ghost preview, click to place. Works on any car.
+4. ✅ **Conformal rendering:** confirmed in game on the CCL Big Boy and its tender (2026-10-05).
+5. ✅ **Persistence:** layouts saved in the save game, reapplied on spawn, orphans kept.
+6. **v0.2: the feature set below (groups 1–4).**
+7. **Later (group 5):** VR placement via CommsRadioAPI, distance culling for long trains, multiplayer sync.
+
+## v0.2 feature plan (agreed 2026-10-06)
+
+### Panel layout
+The panel gets tabs: **Place | Edit | Layouts | Debug**. Shared controls (size, rotation, colour, finish, weathering) live in one "decal settings" block. **Place** edits the next decal, and **Edit** edits the selected one.
+
+### Group 1: placing and editing
+- **Edit placed decals.** In the Edit tab, clicking a decal on the car selects it. It's picked by testing the hit point against each decal's box; the smallest box wins. A list of the car's decals also selects. The selected decal pulses (shader `_Highlight`).
+  - Drag with the left mouse to move it over the surface. It keeps its size and rotation.
+  - Every setting in the settings block applies live. Buttons: Delete (or the Delete key), Duplicate, Move to placing.
+  - Undo/redo covers place, edit, move, delete and mirror. It keeps a snapshot stack per car, up to 50 steps.
+- **Mouse wheel while placing or dragging:** Ctrl+wheel rotates, Shift+wheel resizes. If the game's own camera also reacts to the wheel, the sliders remain. That needs checking in game.
+- **Keep level** (on by default): the image's horizontal axis stays parallel to the car's horizontal plane. Projection also snaps to the nearest car axis (side, top, front or back), so numbers on a curved boiler are stencilled straight on. With it off, the decal projects along the surface normal. There's also a rotation snap toggle with 15° steps.
+- **Mirror to the other side:** a toggle when placing, plus a "Mirror" button in Edit. The copy is reflected across the car's centre line (local X = 0). The maths reflects with M = diag(-1,1,1), so the quaternion becomes (x, −y, −z, w). Text still reads correctly from the other side.
+  - Mirrored pairs are **linked** (`PairId`): editing one updates its twin until you unlink them.
+- **Moving parts:** a decal is anchored to the part it was placed on. That's the car body, or the bogie / articulated engine unit if you clicked one (`TrainCar.Bogies`). It's only drawn on renderers under that anchor, so it doesn't slide when the bogie swings. Anything animated inside that part (rods) may still slide, so avoid placing on those.
+
+### Group 2: text without PNGs
+- **Text decals:** in the Place tab, choose "Image" or "Text". Text settings: text, font, size, colour, outline colour and width, letter spacing, and alignment.
+- **How it renders:** legacy `TextMesh` with `Font.CreateDynamicFontFromOSFont`, so **any font installed in Windows** can be used. It draws once into a RenderTexture with an off-screen orthographic camera and our own `DadsDecals/TextRender` shader, so it doesn't depend on any game shaders surviving. The result is copied to a `Texture2D` (with mipmaps) and cached by its settings.
+  - **Outline:** the text is drawn in the outline colour at 8 offsets, then the main colour on top.
+- **Auto road numbers:** tokens in the text are replaced per car:
+  - `{id}` → `L-042`
+  - `{num}` → `042`
+  - `{n}` → `42` (no leading zeros)
+  - `{type}` → livery name
+
+  So one template can number a whole fleet. Text with tokens is rendered per car.
+
+### Group 3: looking like real paint
+- **Colour picker:** RGB/HSV sliders, a hex field and a swatch row. Swatches are presets plus your own saved colours, kept in mod settings. There's also **Pick from screen**: an eyedropper that samples the pixel under the mouse at the end of the frame. That colour includes the game's lighting, so treat it as a starting point.
+- **Finish:** smoothness and metallic sliders, with presets **Matte paint** (0.15/0), **Gloss vinyl** (0.75/0) and **Metal plate** (0.55/0.9).
+- **Weathering:**
+  - **Grime:** takes the dirt from the livery under the decal. The shader samples the target material's albedo at the mesh's own UVs, compares it with a blurred mip of the same texture, and darkens the decal by that ratio. Streaks and grime on the livery show through.
+  - **Chipping:** procedural noise in decal space erodes the edges and paint, with a per-decal seed.
+- **Glow:** emission strength, for number boards and plates that should read at night.
+
+### Group 4: reusing layouts
+- **Templates:** "Save as template" writes `Mods/DadsDecals/Templates/<livery id>/<name>.json`. These are files, not save-game data, so they work across saves. "Apply" adds or replaces a template's decals on the current car. Templates for the car's livery are listed first, then all others.
+- **Copy from another car:** lists cars in the world that have layouts, plus orphans, and copies the decals over.
+- **Export / import:** export writes `Mods/DadsDecals/Exports/<name>/layout.json` plus copies of the PNGs it uses. Import copies the PNGs into `Decals/Imported/<name>/` and remaps the image keys. A folder is all someone needs to share.
+- **Layouts per livery:** an optional per-car toggle, "Link layout to paint". The current decals are stored per paint theme, read from `TrainCar.PaintExterior.CurrentTheme.AssetName`. That covers vanilla themes and Skin Manager skins, because Skin Manager themes extend the game's `PaintTheme`. When the paint changes (`TrainCarPaint.OnThemeChanged`), the decals swap to that theme's set. No Skin Manager dependency.
+
+### Data format v2
+`DecalPlacement` gains these fields:
+- `Kind` (image or text) and the text fields
+- `Anchor` (path to the anchor transform; empty means the car body)
+- `Smoothness`, `Metallic`, `Grime`, `Chipping`, `ChipSeed`, `Glow`
+- `PairId`
+
+`LocoLayout` gains `LinkToPaint` and `ByTheme`. v1 saves load with sensible defaults.
+
+### Build order
+1. Data v2 + shader v2 (finish, grime, chipping, glow, highlight), checked offline with `ShaderTestRender`.
+2. Panel tabs + shared settings block + colour picker + finish/weathering controls.
+3. Editing: select, drag, live edit, delete/duplicate, undo/redo, keep level, snap, wheel, anchors.
+4. Mirror + linked pairs.
+5. Text decals + tokens.
+6. Templates, copy-from, export/import, paint-linked layouts.
+
+Each step is built, committed, and installed when the game is closed.
 
 ## Open questions
-- Skin Manager reskins: expected fine (we draw separately), check in game.
-- Interior decals (cab) as well as exterior? Exterior first.
-- VR: placement via CommsRadioAPI later.
+- Does the game's exterior camera also zoom on the mouse wheel? If so, Ctrl/Shift+wheel may need different modifiers.
+- Interior (cab) decals: exterior first.
