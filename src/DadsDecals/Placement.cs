@@ -21,7 +21,7 @@ namespace DadsDecals
         public float Width = 0.6f;
         public float Height = 0.6f;
         public bool LockAspect = true;
-        public float Depth = 0.3f;
+        public float Depth = 1.0f;
         public float Angle;
         public float Opacity = 1f;
         public float WrapAngle = 75f;
@@ -29,6 +29,13 @@ namespace DadsDecals
         public Color Tint = Color.white;
 
         public string? Image;
+
+        /// <summary>What the mouse is aiming at, for the panel's readout.</summary>
+        public string AimInfo { get; private set; } = "";
+
+        // Collision shapes can sit off the visible body, so the box starts this far outside the
+        // point we hit and runs inward from there.
+        private const float SurfaceMargin = 0.25f;
         private bool hasHit;
         private readonly DecalPlacement ghost = new DecalPlacement();
         private ModToolbarWindow? panelWindow;
@@ -54,6 +61,7 @@ namespace DadsDecals
             ClearGhost();
             Armed = false;
             hasHit = false;
+            AimInfo = "";
         }
 
         /// <summary>Forget the targeted car, e.g. when it is deleted.</summary>
@@ -85,6 +93,9 @@ namespace DadsDecals
             }
 
             hasHit = RaycastAnyCar(cam.ScreenPointToRay(Input.mousePosition), out var hit, out var hitCar);
+            AimInfo = hasHit
+                ? $"{hitCar!.ID} / {Diagnostics.Path(hitCar.transform, hit.collider.transform)} ({hit.collider.GetType().Name}), {hit.distance:0.0} m"
+                : "not over a car";
             if (hasHit && hitCar != Car)
             {
                 ClearGhost();
@@ -110,7 +121,8 @@ namespace DadsDecals
             var up = Vector3.ProjectOnPlane(root.up, forward);
             if (up.sqrMagnitude < 0.01f) up = Vector3.ProjectOnPlane(root.forward, forward);
             var worldRot = Quaternion.LookRotation(forward, up.normalized) * Quaternion.AngleAxis(Angle, Vector3.forward);
-            localPos = root.InverseTransformPoint(hit.point);
+            var margin = Mathf.Min(SurfaceMargin, Depth * 0.5f);
+            localPos = root.InverseTransformPoint(hit.point + forward * (Depth * 0.5f - margin));
             localRot = Quaternion.Inverse(root.rotation) * worldRot;
         }
 

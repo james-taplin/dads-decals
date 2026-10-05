@@ -25,6 +25,9 @@ namespace DadsDecals
         /// <summary>Set by Placement while the player is positioning a new decal on this car.</summary>
         public DecalPlacement? Ghost;
 
+        /// <summary>How many renderer draws the ghost made last frame (panel readout).</summary>
+        public int GhostDraws { get; private set; }
+
         public static DecalRenderer Ensure(TrainCar car)
         {
             var r = car.GetComponent<DecalRenderer>();
@@ -46,7 +49,7 @@ namespace DadsDecals
             var layout = Main.Layouts.Get(car.CarGUID);
             if (layout != null)
                 foreach (var d in layout.Decals) Draw(d);
-            if (Ghost != null) Draw(Ghost);
+            GhostDraws = Ghost != null ? Draw(Ghost) : 0;
         }
 
         /// <summary>World matrix of the decal box (unit cube -> world).</summary>
@@ -60,11 +63,12 @@ namespace DadsDecals
             return carRoot.localToWorldMatrix * local;
         }
 
-        private void Draw(DecalPlacement d)
+        private int Draw(DecalPlacement d)
         {
-            if (!Main.Library.TryGet(d.Image, out var image)) return;
+            if (!Main.Library.TryGet(d.Image, out var image)) return 0;
             var material = image.Material;
-            if (material == null) return;
+            if (material == null) return 0;
+            var draws = 0;
 
             var toWorld = DecalToWorld(transform, d);
             var bounds = WorldBounds(toWorld);
@@ -84,7 +88,9 @@ namespace DadsDecals
                 var m = r.localToWorldMatrix;
                 for (var sub = 0; sub < t.Mesh.subMeshCount; sub++)
                     Graphics.DrawMesh(t.Mesh, m, material, r.gameObject.layer, null, sub, mpb, ShadowCastingMode.Off, true);
+                draws++;
             }
+            return draws;
         }
 
         private Bounds WorldBounds(Matrix4x4 toWorld)

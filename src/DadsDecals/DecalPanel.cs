@@ -57,6 +57,8 @@ namespace DadsDecals
             GUILayout.Space(6);
             GUILayout.Label($"Placing: {p.Image}");
             GUILayout.Label("Left-click any loco, tender or wagon to place. Right-click to stop.");
+            var ghostDraws = p.Car != null && p.Car.GetComponent<DecalRenderer>() is DecalRenderer dr ? dr.GhostDraws : 0;
+            GUILayout.Label($"Aiming at: {p.AimInfo}\nPreview drawn on {ghostDraws} part(s)");
 
             var oldWidth = p.Width;
             p.Width = Slider("Width (m)", p.Width, 0.05f, 5f);
@@ -68,7 +70,7 @@ namespace DadsDecals
             else p.Height = Slider("Height (m)", p.Height, 0.05f, 5f);
 
             p.Angle = Slider("Rotation (deg)", p.Angle, -180f, 180f);
-            p.Depth = Slider("Projection depth (m)", p.Depth, 0.02f, 2f);
+            p.Depth = Slider("Projection depth (m)", p.Depth, 0.05f, 3f);
             p.WrapAngle = Slider("Wrap angle (deg)", p.WrapAngle, 5f, 89f);
             p.Opacity = Slider("Opacity", p.Opacity, 0f, 1f);
             p.MirrorX = GUILayout.Toggle(p.MirrorX, "Mirror");
