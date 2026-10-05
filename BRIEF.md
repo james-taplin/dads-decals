@@ -30,13 +30,15 @@ A lightweight Derail Valley mod that lets players stick decals (numbers, logos, 
 - **Storage:** the save game (`MOD_DADSDECALS` key, same pattern as LocoOwnership), because GUIDs only mean something inside one save. Export/import to a file comes later for sharing.
 - **Not like Zeibach's sounds mod:** that works per loco *type*. We go per *individual loco* first, with per-type templates later.
 
-## Decal technique: decided by in-game diagnostics
-There are two options (full comparison in RESEARCH.md):
-- **CPU mesh clipping:** copy the loco's triangles inside the decal box into a small mesh. This needs readable meshes and a stock transparent shader.
-- **GPU projection (the Conformal Decals technique):** redraw the overlapped renderers with a projector shader that discards pixels outside the box. This works on non-readable meshes and makes live preview easy, but needs our own shader built in Unity 2019.4.40.
+## Decal technique: GPU projection (decided 2026-10-05)
+**Requirement:** decals must work on any loco, including mod/CCL locos, **without loco authors having to do anything**. Round-1 diagnostics showed that mesh Read/Write is often off (e.g. DE2 LODs, roughly 2/3 of all meshes), and only the loco author can change that. So CPU mesh clipping is out.
 
-The skeleton mod has a **Run diagnostics** button that logs the facts that decide this.
-
+We use **GPU projection**, the same technique Conformal Decals uses. Our shader is written from scratch, not copied (theirs is GPL-3).
+- A decal is an oriented box attached to a transform on the car.
+- For each LOD0 exterior renderer whose bounds overlap the box, we redraw its mesh (`Graphics.DrawMesh`, or a `CommandBuffer`) with our decal material and a projector matrix.
+- The shader turns each vertex into box space, uses that as the UV, and discards pixels outside the box or facing away beyond the wrap angle.
+- This works on **any** mesh, readable or not. Live preview just means updating a matrix.
+- **The only dependency is ours:** the shader is compiled once in Unity 2019.4.40 into an AssetBundle that ships inside the mod. Players and loco authors need nothing extra.
 ## Performance budget
 - Textures are loaded once and shared. Downscale anything over 2048px.
 - No per-frame allocation. Decal geometry/matrices update only on place/edit/spawn.
@@ -44,15 +46,15 @@ The skeleton mod has a **Run diagnostics** button that logs the facts that decid
 
 ## Milestones
 1. ✅ **Skeleton:** UMM mod loads, Toolbar panel, PNG palette, save/load plumbing, diagnostics.
-2. **Pick technique** from diagnostics on several locos (vanilla + CCL).
+2. **Shader:** install Unity 2019.4.40, write the projector shader, build the AssetBundle, load it in the mod.
 3. **Placement:** mouse raycast onto the loco, ghost preview, click to place, attached to the right transform.
-4. **Conformal rendering** with the chosen technique.
+4. **Conformal rendering:** projector drawing on overlapped LOD0 renderers; check deferred/HDR lighting and fog match.
 5. **Persistence live:** layouts reapply on `CarSpawned`; orphan re-apply UI.
 6. **Editing UX:** select/move/rotate/scale/delete, undo.
 7. **Templates + export/import.**
 8. **Polish:** tint/opacity/wrap slider, downscaling, docs, Nexus release.
 
 ## Open questions
-- Do CCL locos and Skin Manager reskins work out of the box? Expected yes, to be checked in game.
+- Skin Manager reskins: expected fine (we draw separately), check in game.
 - Interior decals (cab) as well as exterior? Exterior first.
 - VR: placement via CommsRadioAPI later.
