@@ -85,7 +85,10 @@ namespace DadsDecals
         {
             if (!Armed || Image == null) return;
 
-            var cam = PlayerManager.PlayerCamera;
+            // The camera the player is looking through (external/orbit camera included), same as the
+            // game's own NonVRHoverManager. PlayerCamera is the first-person head camera and gives
+            // a ray from the wrong place when the external camera is active.
+            var cam = PlayerManager.ActiveCamera != null ? PlayerManager.ActiveCamera : PlayerManager.PlayerCamera;
             var overUi = MouseOverUi();
             MouseInfo = $"mouse {Input.mousePosition.x:0},{Input.mousePosition.y:0} of {Screen.width}x{Screen.height}, " +
                         $"cursor visible={Cursor.visible} lock={Cursor.lockState}, over UI={overUi}, camera={(cam != null ? cam.name : "none")}";
