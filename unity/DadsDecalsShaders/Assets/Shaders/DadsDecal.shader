@@ -55,7 +55,8 @@ Shader "DadsDecals/Projected"
             clip(0.5 - abs(IN.decalPos));
             clip(IN.facing - _WrapCos);
 
-            float2 uv = TRANSFORM_TEX(IN.decalPos.xy + 0.5, _MainTex);
+            // Not TRANSFORM_TEX: it pastes its argument unbracketed, which broke this expression.
+            float2 uv = (IN.decalPos.xy + 0.5) * _MainTex_ST.xy + _MainTex_ST.zw;
             fixed4 c = tex2D(_MainTex, uv) * _Color;
 
             o.Albedo = c.rgb;
