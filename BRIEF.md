@@ -50,7 +50,7 @@ We use **GPU projection**, the same technique Conformal Decals uses. Our shader 
 3. ✅ **Placement:** mouse raycast through `PlayerManager.ActiveCamera` (so the exterior camera works), ghost preview, click to place. Works on any car.
 4. ✅ **Conformal rendering:** confirmed in game on the CCL Big Boy and its tender (2026-10-05).
 5. ✅ **Persistence:** layouts saved in the save game, reapplied on spawn, orphans kept.
-6. **v0.2: the feature set below (groups 1–4).**
+6. 🔧 **v0.2: the feature set below (groups 1–4).** Built 2026-10-06, commit 78cf3ac. The shader and text rendering are checked offline; nothing has been tested in the game yet.
 7. **Later (group 5):** VR placement via CommsRadioAPI, distance culling for long trains, multiplayer sync.
 
 ## v0.2 feature plan (agreed 2026-10-06)
