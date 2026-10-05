@@ -32,7 +32,8 @@ namespace DadsDecals
         public static void Hook()
         {
             WorldStreamingInit.LoadingFinished += OnWorldLoaded;
-            if (WorldStreamingInit.IsLoaded) OnWorldLoaded();
+            // Note: WorldStreamingInit.IsLoaded is true at the main menu (no instance), so don't trust it.
+            OnWorldLoaded();
         }
 
         public static void Unhook()
@@ -48,8 +49,9 @@ namespace DadsDecals
 
         private static void OnWorldLoaded()
         {
-            if (spawner != null) return;
-            spawner = SingletonBehaviour<CarSpawner>.Instance;
+            if (spawner != null) return;   // Unity null: also re-hooks after returning to menu and loading again
+            spawner = UnityEngine.Object.FindObjectOfType<CarSpawner>();
+            if (spawner == null) return;   // not in a world yet; LoadingFinished will call us again
             spawner.CarSpawned += OnCarSpawned;
             spawner.CarAboutToBeDeleted += OnCarDeleted;
         }
