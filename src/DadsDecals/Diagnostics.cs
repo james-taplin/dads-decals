@@ -1,3 +1,4 @@
+using System.IO;
 using System.Linq;
 using System.Text;
 using UnityEngine;
@@ -8,6 +9,7 @@ namespace DadsDecals
     /// Answers the open technical questions from BRIEF.md with evidence from the running game:
     /// are loco meshes CPU-readable (needed for mesh-clipping decals), which shaders can we find
     /// at runtime (needed if we avoid shipping our own), and which rendering path the camera uses.
+    /// Full report goes to Mods/DadsDecals/Diagnostics/&lt;carId&gt;_&lt;livery&gt;.txt; a summary goes to the log.
     /// </summary>
     internal static class Diagnostics
     {
@@ -20,10 +22,12 @@ namespace DadsDecals
             "Unlit/Transparent",
             "Unlit/Transparent Cutout",
             "Sprites/Default",
+            "TransparencyWithFog",
         };
 
         public static string Run(TrainCar car)
         {
+            var root = car.transform;
             var sb = new StringBuilder();
             sb.AppendLine($"=== Dad's Decals diagnostics: {car.ID} ({car.carLivery?.id}) guid={car.CarGUID}");
 
@@ -31,13 +35,25 @@ namespace DadsDecals
             if (cam != null)
                 sb.AppendLine($"Camera: renderingPath={cam.renderingPath} actual={cam.actualRenderingPath} hdr={cam.allowHDR}");
 
-            var filters = car.GetComponentsInChildren<MeshFilter>(true);
-            var withMesh = filters.Where(f => f.sharedMesh != null).ToArray();
-            var readable = withMesh.Count(f => f.sharedMesh.isReadable);
-            var skinned = car.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length;
-            sb.AppendLine($"MeshFilters: {withMesh.Length}, readable: {readable}, skinned renderers: {skinned}");
-            foreach (var f in withMesh.Take(40))
-                sb.AppendLine($"  {(f.sharedMesh.isReadable ? "R" : "-")} {Path(car.transform, f.transform)}  mesh={f.sharedMesh.name} verts={f.sharedMesh.vertexCount}");
+            // Only renderers that draw the outside of the loco at full detail are decal targets.
+            var targets = car.GetComponentsInChildren<MeshRenderer>(true)
+                .Select(r => (r, f: r.GetComponent<MeshFilter>()))
+                .Where(x => x.f != null && x.f.sharedMesh != null)
+                .Select(x => (x.r, mesh: x.f.sharedMesh, path: Path(root, x.r.transform)))
+                .Where(x => !IsExcluded(x.r, x.path))
+                .OrderByDescending(x => x.mesh.vertexCount)
+                .ToList();
+
+            var readable = targets.Where(t => t.mesh.isReadable).ToList();
+            var totalVerts = targets.Sum(t => t.mesh.vertexCount);
+            var readableVerts = readable.Sum(t => t.mesh.vertexCount);
+            sb.AppendLine($"Exterior LOD0 targets: {targets.Count}, readable: {readable.Count}  " +
+                          $"(vertices {readableVerts}/{totalVerts} = {(totalVerts == 0 ? 0 : 100 * readableVerts / totalVerts)}% readable)");
+            sb.AppendLine($"Skinned renderers: {car.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length}");
+
+            sb.AppendLine("Largest targets:");
+            foreach (var t in targets.Take(12))
+                sb.AppendLine($"  {(t.mesh.isReadable ? "R" : "-")} verts={t.mesh.vertexCount,6}  {t.path}  mesh={t.mesh.name}");
 
             var shadersInUse = car.GetComponentsInChildren<Renderer>(true)
                 .SelectMany(r => r.sharedMaterials)
@@ -45,13 +61,39 @@ namespace DadsDecals
                 .Select(m => m.shader.name)
                 .Distinct();
             sb.AppendLine("Shaders used by this car: " + string.Join(", ", shadersInUse));
-
             foreach (var name in CandidateShaders)
                 sb.AppendLine($"Shader.Find(\"{name}\"): {(Shader.Find(name) != null ? "found" : "MISSING")}");
 
-            var report = sb.ToString();
-            Main.Log.Log(report);
-            return report;
+            var summary = sb.ToString();
+
+            sb.AppendLine();
+            sb.AppendLine("All exterior LOD0 targets:");
+            foreach (var t in targets)
+                sb.AppendLine($"  {(t.mesh.isReadable ? "R" : "-")} verts={t.mesh.vertexCount,6}  {t.path}  mesh={t.mesh.name}  shader={t.r.sharedMaterial?.shader?.name}");
+
+            var dir = System.IO.Path.Combine(Main.Mod.Path, "Diagnostics");
+            Directory.CreateDirectory(dir);
+            var file = System.IO.Path.Combine(dir, $"{car.ID}_{car.carLivery?.id}.txt");
+            File.WriteAllText(file, sb.ToString());
+
+            Main.Log.Log(summary + "Full report: " + file);
+            return summary;
+        }
+
+        private static bool IsExcluded(MeshRenderer r, string path)
+        {
+            var p = path.ToLowerInvariant();
+            if (p.Contains("[interior") || p.Contains("broken") || p.Contains("textmeshpro") || p.Contains("carplate")) return true;
+            if (p.Contains("[car plate")) return true;
+            // LOD1+ (both "_LOD1" naming and Unity LODGroup membership)
+            if (System.Text.RegularExpressions.Regex.IsMatch(p, @"lod[1-9]")) return true;
+            var group = r.GetComponentInParent<LODGroup>();
+            if (group != null)
+            {
+                var lods = group.GetLODs();
+                if (lods.Length > 0 && !lods[0].renderers.Contains(r) && lods.Skip(1).Any(l => l.renderers.Contains(r))) return true;
+            }
+            return false;
         }
 
         public static string Path(Transform root, Transform t)

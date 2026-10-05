@@ -50,3 +50,14 @@ Read from github.com/Mecripp/KSP-Conformal-Decals, a 2020 snapshot (the original
 **Next step:** run the in-game **diagnostics** button on a few locos. It logs mesh readability, the shaders each loco uses, which candidate stock shaders `Shader.Find` can see, and the camera rendering path. The answer picks the technique:
 - Meshes readable + a stock transparent shader found → CPU clipping first (no Unity Editor needed).
 - Otherwise → GPU projection with our own shader, which means installing Unity 2019.4.40 to build an AssetBundle.
+
+## In-game diagnostics, round 1 (2026-10-05)
+Run on L-041 (LocoDH4), L-006 (LocoDE2), L-084 (GN_M2, CCL), L-055 (em_h6f_main, CCL). Source: Player.log.
+
+- **Camera: DeferredShading, HDR on**, for all four. Alpha-blended decals draw in the forward pass after the deferred pass, which is the same way Conformal Decals renders.
+- **Shaders found by `Shader.Find`:** `Standard`, `Unlit/Transparent`, `Sprites/Default`. **Missing:** every `Legacy Shaders/Transparent/*` and `Unlit/Transparent Cutout`, so the game's shader stripper removed them. DV also has its own `TransparencyWithFog`, used on DH4/DE2 glass.
+- **Mesh readability:** mixed. Readable vs total MeshFilters: DH4 61/163, DE2 55/193, GN_M2 134/418, H6F 62/108.
+  - The **vanilla main bodies at LOD0 are readable**: `dh4_exterior_body` (24,754 verts) and DE2 `621_exterior` (24,951 verts). The DE2 LOD1–3 bodies are *not* readable, but we only need LOD0.
+  - The CCL bodies weren't in the round-1 output, which only printed the first 40 meshes. Round 2 diagnostics now list every exterior LOD0 target to `Mods/DadsDecals/Diagnostics/<id>_<livery>.txt`.
+
+**Provisional reading:** CPU mesh clipping + `Standard` (Fade mode) works on vanilla bodies with no Unity Editor. Whether it covers CCL locos depends on round 2. Whether Standard's transparent variants survived stripping is only provable by rendering one.
