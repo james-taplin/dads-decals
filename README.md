@@ -20,6 +20,7 @@ A Derail Valley mod for putting decals on locomotives, tenders and wagons: road 
 | | |
 |---|---|
 | ![Text decal with outline and chipping](docs/images/showcase-text-outline-chipping.webp) | ![Road number on a tender](docs/images/showcase-tender-number.png) |
+| ![Two-line DVRT lettering, chipped road number and fluid labels on a tender](docs/images/showcase-tender-lettering.webp) | ![Road number on a boiler](docs/images/showcase-boiler-number.png) |
 
 ## Requirements
 - [Unity Mod Manager](https://www.nexusmods.com/site/mods/21)
