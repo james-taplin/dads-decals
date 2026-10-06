@@ -2,7 +2,7 @@
 
 A Derail Valley mod for putting decals on locomotives, tenders and wagons: road numbers, logos, warning stripes, placards, anything you have as a PNG or can type. Decals wrap around curved and angled surfaces, sit in the game's lighting, shadows and fog, and every car keeps its own layout in your save.
 
-![A tender with a DVRT herald, road number, fluid labels and a DVRT logo, all placed with Dad's Decals](docs/images/showcase-tender-herald.webp)
+![An S060 tank engine covered in decals: anime stickers, cats, stripes, placards and rosy glowing cheeks on the smokebox](docs/images/showcase-s060-side.webp)
 
 **Status: pre-release (v0.3.0).** It works well in testing, but expect rough edges. Please report problems on the [issue tracker](https://github.com/james-taplin/dads-decals/issues).
 
@@ -19,13 +19,13 @@ A Derail Valley mod for putting decals on locomotives, tenders and wagons: road 
 
 ![The Decals window in the Edit tab, with the selected logo pulsing on the tender](docs/images/gui-edit.png)
 
-| | |
-|---|---|
-| ![Two-line DVRT lettering, chipped road number and fluid labels on a tender](docs/images/showcase-tender-lettering.webp) | ![Road number, stencil text, hazard stripe and a rotated chipped slogan on a tender](docs/images/showcase-tender-rekt.png) |
+Keep it tidy:
+
+| | | |
+|---|---|---|
+| ![A tender with a DVRT herald, road number, fluid labels and a DVRT logo](docs/images/showcase-tender-herald.webp) | ![Two-line DVRT lettering, chipped road number and fluid labels on a tender](docs/images/showcase-tender-lettering.webp) | ![Road number, stencil text, hazard stripe and a rotated chipped slogan on a tender](docs/images/showcase-tender-rekt.png) |
 
 Or go completely overboard:
-
-![An S060 tank engine covered in stickers, stripes, cats and placards](docs/images/showcase-s060-side.webp)
 
 | | |
 |---|---|

@@ -2,9 +2,9 @@
 
 Dad's Decals lets you put decals on any Derail Valley loco, tender or wagon: numbers, logos, stripes, placards, your own PNGs or text in any Windows font. Decals wrap around the bodywork like paint, pick up the game's lighting, shadows and fog, and each car remembers its own layout.
 
-![A tender decorated with Dad's Decals](../docs/images/showcase-tender-herald.webp)
+![An S060 tank engine covered in decals, with rosy glowing cheeks on the smokebox](../docs/images/showcase-s060-side.webp)
 
-![An S060 tank engine covered in stickers, stripes, cats and placards](../docs/images/showcase-s060-side.webp)
+![A tender decorated with Dad's Decals](../docs/images/showcase-tender-herald.webp)
 
 ## Pages
 | Page | What's in it |

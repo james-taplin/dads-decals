@@ -2,7 +2,7 @@
 
 All notable changes to Dad's Decals. Versions follow [semantic versioning](https://semver.org/); dates are YYYY-MM-DD.
 
-## [0.3.0] - 2026-10-06 (first public pre-release)
+## [0.3.0] - 2026-10-06 (pre-release)
 
 ### Fixed
 - **Decals on mirrored parts.** No preview or decals appeared on locos with mirrored parts, such as the S060 with Locomotive Mesh Splitter, which mirrors its split body pieces. Decals now draw on both sides of a surface and rely on the facing check to skip the back.
@@ -14,7 +14,7 @@ All notable changes to Dad's Decals. Versions follow [semantic versioning](https
 - New showcase shots, including a fully decorated S060.
 - New FAQ entries: the "paused" aim message, the S060 fix, and the small white dot in the centre of the screen. That dot is the DV People mod's passenger-seat aim dot (turn off *Show Passenger Seat Hover Text* in its settings), not Dad's Decals.
 
-## [0.2.0] - 2026-10-06 (feature build, not published)
+## [0.2.0] - 2026-10-06 (first pre-release)
 
 ### Added
 - **Decal placement** on any loco, tender or wagon, vanilla or custom (CCL), with a live preview that follows the mouse. It aims through the camera you're looking through, so the exterior camera works.
