@@ -2,6 +2,21 @@
 
 All notable changes to Dad's Decals. Versions follow [semantic versioning](https://semver.org/); dates are YYYY-MM-DD.
 
+## [0.4.0-alpha.1] - not released yet (multiplayer test build, `multiplayer` branch)
+
+First step of multiplayer support for [Derail Valley Multiplayer](https://github.com/AMacro/dv-multiplayer) (0.1.16+). Single player is unchanged.
+
+### Added
+- **Players with and without Dad's Decals can join each other's games.** Dad's Decals now tells Multiplayer it's a client-side mod (`"MultiplayerCompatibility": "Client"`), so it's no longer required on both sides.
+- **Guests see the host's decals.** When a guest with Dad's Decals 0.4+ joins, the host sends every car's layout, then sends changes live as the host places and edits. Guests can't place or edit yet; that comes in a later test build. Images a guest doesn't have are listed in the multiplayer log (image transfer comes in alpha.2).
+- **Polite note for old versions.** A guest running Dad's Decals before 0.4 can still join a 0.4 host, and gets a whispered message that their version isn't supported in multiplayer.
+- **Local-only mode.** If the host has no Dad's Decals (or an incompatible version), a guest's decals stay on their own screen, and the panel says so.
+- **Multiplayer log** in the Debug tab, with a button that saves it to a file for bug reports.
+- Multiplayer code lives in a separate `DadsDecals.Multiplayer.dll`, loaded only when the Multiplayer mod is installed.
+
+### Changed
+- Save format v3: every decal gets a stable ID and a "placed by" name. Older saves load fine and get new IDs.
+
 ## [Unreleased] (planned 0.3.2)
 
 ### Added

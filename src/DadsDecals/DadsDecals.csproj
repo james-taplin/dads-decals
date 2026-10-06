@@ -6,7 +6,7 @@
     <Nullable>enable</Nullable>
     <AssemblyName>DadsDecals</AssemblyName>
     <RootNamespace>DadsDecals</RootNamespace>
-    <Version>0.3.0</Version>
+    <Version>0.4.0-alpha.1</Version>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <!-- Override on the command line or in a gitignored Directory.Build.user.props: -p:DvInstallDir=... -->

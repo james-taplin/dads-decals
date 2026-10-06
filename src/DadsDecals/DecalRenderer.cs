@@ -70,8 +70,12 @@ namespace DadsDecals
         private void OnThemeChanged(TrainCarPaint p)
         {
             RefreshTargets();   // reskins can swap materials
+            // In multiplayer only the host swaps paint-linked decals and sends the result, so the
+            // machines can't drift apart; guests get the new layout from the host.
+            if (Sync.Role == SyncRole.Client) return;
             var layout = Main.Layouts.Get(car.CarGUID);
             if (layout != null) PaintLink.OnThemeChanged(layout, PaintLink.CurrentTheme(car));
+            Sync.MarkDirty(car.CarGUID);
         }
 
         private void LateUpdate()

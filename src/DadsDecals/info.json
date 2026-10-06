@@ -1,11 +1,12 @@
 {
   "Id": "DadsDecals",
   "DisplayName": "Dad's Decals",
-  "Version": "0.3.0",
+  "Version": "0.4.0",
   "Author": "james-taplin",
   "ManagerVersion": "0.27.3",
   "AssemblyName": "DadsDecals.dll",
   "EntryMethod": "DadsDecals.Main.Load",
   "Requirements": ["DerailValleyModToolbar"],
-  "LoadAfter": ["DerailValleyModToolbar"]
+  "LoadAfter": ["DerailValleyModToolbar", "Multiplayer"],
+  "MultiplayerCompatibility": "Client"
 }

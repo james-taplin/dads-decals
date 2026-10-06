@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Multiplayer support, kept in its own DLL: Dad's Decals only loads it when the Multiplayer mod is
+    installed and enabled (Sync.TryLoadBridge), so single player never touches MultiplayerAPI.dll.
+    Building this project builds DadsDecals too; -p:Deploy=true deploys both.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AssemblyName>DadsDecals.Multiplayer</AssemblyName>
+    <RootNamespace>DadsDecals.Multiplayer</RootNamespace>
+    <Version>0.4.0-alpha.1</Version>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <DvInstallDir Condition="'$(DvInstallDir)' == ''">B:\SteamLibrary\steamapps\common\Derail Valley</DvInstallDir>
+    <DvManaged>$(DvInstallDir)\DerailValley_Data\Managed</DvManaged>
+    <DvMods>$(DvInstallDir)\Mods</DvMods>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DadsDecals\DadsDecals.csproj" Private="false" />
+    <!-- Build-only; the Multiplayer mod ships it at runtime. -->
+    <Reference Include="MultiplayerAPI" HintPath="..\..\lib\MultiplayerAPI.dll" Private="false" />
+    <Reference Include="Assembly-CSharp" HintPath="$(DvManaged)\Assembly-CSharp.dll" Private="false" />
+    <Reference Include="DV.Utils" HintPath="$(DvManaged)\DV.Utils.dll" Private="false" />
+    <Reference Include="UnityEngine" HintPath="$(DvManaged)\UnityEngine.dll" Private="false" />
+    <Reference Include="UnityEngine.CoreModule" HintPath="$(DvManaged)\UnityEngine.CoreModule.dll" Private="false" />
+    <Reference Include="UnityModManager" HintPath="$(DvManaged)\UnityModManager\UnityModManager.dll" Private="false" />
+    <Reference Include="0Harmony" HintPath="$(DvManaged)\UnityModManager\0Harmony.dll" Private="false" />
+  </ItemGroup>
+
+  <Target Name="DeployToGame" AfterTargets="Build" Condition="'$(Deploy)' == 'true'">
+    <Copy SourceFiles="$(OutDir)DadsDecals.Multiplayer.dll" DestinationFolder="$(DvMods)\DadsDecals" />
+  </Target>
+
+</Project>

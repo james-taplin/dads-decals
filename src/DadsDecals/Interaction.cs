@@ -68,8 +68,18 @@ namespace DadsDecals
 
         // ---- mode control (from the panel) ---------------------------------------------------
 
+        /// <summary>Leaves placing/editing entirely (e.g. on becoming a read-only multiplayer guest).</summary>
+        public void StopAll()
+        {
+            StopPlacing();
+            Deselect();
+            CancelPick();
+            Mode = ToolMode.None;
+        }
+
         public void StartPlacing()
         {
+            if (Sync.ReadOnly) return;
             Deselect();
             Mode = ToolMode.Place;
         }
@@ -82,6 +92,7 @@ namespace DadsDecals
 
         public void StartEditing()
         {
+            if (Sync.ReadOnly) return;
             ClearGhost();
             Mode = ToolMode.Edit;
         }
@@ -123,6 +134,8 @@ namespace DadsDecals
         private void Update()
         {
             TextDecals.RenderPending();
+            Sync.TryLoadBridge();
+            Sync.Poll(Car, SelectedCar, DecalPanel.ShownCar);
             var cam = PlayerManager.ActiveCamera != null ? PlayerManager.ActiveCamera : PlayerManager.PlayerCamera;
             var overUi = MouseOverUi();
             MouseInfo = $"mouse {Input.mousePosition.x:0},{Input.mousePosition.y:0} of {Screen.width}x{Screen.height}, " +
@@ -198,7 +211,7 @@ namespace DadsDecals
             {
                 var layout = Main.Layouts.GetOrCreate(Car);
                 Undo.Record(layout);
-                var placed = ghost.Clone();
+                var placed = ghost.Copy();
                 placed.ChipSeed = UnityEngine.Random.Range(0f, 100f);
                 placed.GrimeSeed = UnityEngine.Random.Range(0f, 100f);
                 if (MirrorPlace)

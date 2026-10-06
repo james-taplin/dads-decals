@@ -35,6 +35,11 @@ namespace DadsDecals
     /// <summary>One placed decal, stored relative to its anchor transform (car body or a bogie).</summary>
     public sealed class DecalPlacement
     {
+        /// <summary>Stable identity for one decal (format v3): multiplayer edits and "placed by" refer to it.</summary>
+        public string Id = NewId();
+        /// <summary>Username of the player who placed it in multiplayer; empty in single player.</summary>
+        public string PlacedBy = "";
+
         public string Kind = DecalKind.Image;
         public string Image = "";          // DecalImage.Key, for image decals
         public TextSpec? Text;             // for text decals
@@ -61,6 +66,16 @@ namespace DadsDecals
         public float Glow;
 
         public string PairId = "";         // shared by a decal and its linked mirror twin
+
+        public static string NewId() => Guid.NewGuid().ToString("N");
+
+        /// <summary>A new, separate decal with the same settings (duplicate, template, copy). Clone() keeps the Id, for undo.</summary>
+        public DecalPlacement Copy()
+        {
+            var c = Clone();
+            c.Id = NewId();
+            return c;
+        }
 
         public DecalPlacement Clone()
         {
@@ -103,7 +118,7 @@ namespace DadsDecals
         /// </summary>
         public DecalPlacement Mirrored()
         {
-            var m = Clone();
+            var m = Copy();
             m.Position = new[] { -Position[0], Position[1], Position[2] };
             m.Rotation = new[] { Rotation[0], -Rotation[1], -Rotation[2], Rotation[3] };
             m.Angle = -Angle;
@@ -137,7 +152,7 @@ namespace DadsDecals
     public sealed class LayoutStore
     {
         public const string SaveKey = "MOD_DADSDECALS";
-        private const int FormatVersion = 2;
+        private const int FormatVersion = 3;   // v3: decal Id + PlacedBy (older saves get new Ids on load)
         private const int MaxOrphans = 20;
 
         private readonly Dictionary<string, LocoLayout> layouts = new Dictionary<string, LocoLayout>();
@@ -177,11 +192,25 @@ namespace DadsDecals
         {
             var layout = GetOrCreate(car);
             Undo.Record(layout);
-            layout.Decals.AddRange(orphan.Decals.Select(d => d.Clone()));
+            layout.Decals.AddRange(orphan.Decals.Select(d => d.Copy()));
             orphans.Remove(orphan);
         }
 
         public void ForgetOrphan(LocoLayout orphan) => orphans.Remove(orphan);
+
+        /// <summary>Replaces (or adds) a whole layout, e.g. one received from a multiplayer host.</summary>
+        public void Put(LocoLayout layout)
+        {
+            layouts[layout.CarGuid] = layout;
+            Undo.Forget(layout.CarGuid);
+        }
+
+        /// <summary>Drops a car's layout without keeping it as an orphan (multiplayer guests: the host keeps orphans).</summary>
+        public void Drop(string carGuid)
+        {
+            layouts.Remove(carGuid);
+            Undo.Forget(carGuid);
+        }
 
         public void Clear()
         {

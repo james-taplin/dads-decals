@@ -68,7 +68,9 @@ namespace DadsDecals
         private static void OnCarDeleted(TrainCar car)
         {
             Interaction.Instance?.ForgetCar(car);
-            Main.Layouts.OnCarDeleted(car);
+            // Guests don't keep orphans: the host does, and sends them back if they're re-applied.
+            if (Sync.Role == SyncRole.Client) Main.Layouts.Drop(car.CarGUID);
+            else Main.Layouts.OnCarDeleted(car);
         }
     }
 }

@@ -44,6 +44,9 @@ namespace DadsDecals
             }
         }
 
+        /// <summary>The car the panel is showing, for multiplayer change checks.</summary>
+        public static TrainCar? ShownCar => Interaction.Instance != null ? CurrentCar : null;
+
         /// <summary>Frame the panel was last drawn; Interaction pauses when it stops being drawn.</summary>
         public static int LastDrawFrame = -100;
 
@@ -71,6 +74,17 @@ namespace DadsDecals
             GUILayout.Label(car != null
                 ? $"Car: {car.ID}  ({car.carLivery?.id})  - {layout?.Decals.Count ?? 0} decal(s)"
                 : "Point at a loco, tender or wagon (or get on one).");
+
+            if (Sync.Role != SyncRole.Offline && Sync.Status.Length > 0)
+                GUILayout.Label("Multiplayer: " + Sync.Status);
+
+            // 0.4.0-alpha.1: guests see the host's decals but can't change them yet.
+            if (Sync.ReadOnly && tab != 3)
+            {
+                GUILayout.Label("You're a guest in this game, so you're seeing the host's decals. " +
+                                "Placing and editing as a guest is coming in a later test build.");
+                return;
+            }
 
             switch (tab)
             {
@@ -487,7 +501,7 @@ namespace DadsDecals
             if (GUILayout.Button("Duplicate"))
             {
                 Undo.Record(layout);
-                var copy = sel.Clone();
+                var copy = sel.Copy();
                 copy.PairId = "";
                 copy.Position[1] -= sel.Size[1] * 1.1f;   // just below, so it's visible; drag it into place
                 layout.Decals.Add(copy);
@@ -657,7 +671,7 @@ namespace DadsDecals
             Undo.Record(layout);
             I.Deselect();
             if (replace) layout.Decals.Clear();
-            layout.Decals.AddRange(decals.Select(d => d.Clone()));
+            layout.Decals.AddRange(decals.Select(d => d.Copy()));
             DecalRenderer.Ensure(car);
         }
 
@@ -689,6 +703,16 @@ namespace DadsDecals
             GUILayout.Label(I.MouseInfo);
             if (car != null && GUILayout.Button("Run diagnostics on " + car.ID)) lastReport = Diagnostics.Run(car);
             if (lastReport.Length > 0) GUILayout.Label(lastReport);
+
+            if (Sync.Role == SyncRole.Offline && Sync.LogLines.Count == 0) return;
+            GUILayout.Space(8);
+            GUILayout.Label($"Multiplayer log (Dad's Decals {Sync.ModVersion}, {Sync.Role})");
+            if (GUILayout.Button("Save multiplayer log to a file")) lastMpLogPath = Sync.SaveLog();
+            if (lastMpLogPath.Length > 0) GUILayout.Label("Saved: " + lastMpLogPath);
+            var lines = Sync.LogLines;
+            for (var i = Math.Max(0, lines.Count - 15); i < lines.Count; i++) GUILayout.Label(lines[i]);
         }
+
+        private string lastMpLogPath = "";
     }
 }
