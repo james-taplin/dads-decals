@@ -12,7 +12,7 @@ public static class ShaderTestRender
         var shaderPath = System.Environment.GetEnvironmentVariable("DADSDECALS_TEST_SHADER") ?? "Assets/Shaders/DadsDecal.shader";
         var shader = AssetDatabase.LoadAssetAtPath<Shader>(shaderPath);
         var tex = new Texture2D(2, 2);
-        tex.LoadImage(File.ReadAllBytes("../../examples/Decals/Test/Number 42.png"));
+        tex.LoadImage(File.ReadAllBytes("../../examples/Decals/Logos/DVRT herald.png"));
         tex.wrapMode = TextureWrapMode.Clamp;
 
         var root = new GameObject("TestRoot");
@@ -90,6 +90,11 @@ public static class ShaderTestRender
         cam.transform.SetParent(root.transform);
         cam.transform.position = new Vector3(1.5f, 2.2f, -7f);
         cam.transform.LookAt(new Vector3(1.5f, 1.5f, 0));
+        if (System.Environment.GetEnvironmentVariable("DADSDECALS_TEST_CLOSE") == "1")
+        {
+            cam.transform.position = new Vector3(0.5f, 1.65f, -2.4f);
+            cam.transform.LookAt(new Vector3(0.5f, 1.6f, -0.8f));
+        }
         cam.allowHDR = true;
         cam.clearFlags = CameraClearFlags.SolidColor;
         cam.backgroundColor = new Color(0.5f, 0.6f, 0.7f);

@@ -27,6 +27,7 @@ namespace DadsDecals
         private readonly Dictionary<string, string> hexEdits = new Dictionary<string, string>();
         private GUIStyle? swatchStyle;
         private GUIStyle? selectedStyle;
+        private GUIStyle? sectionStyle;
 
         private static Interaction I => Interaction.Instance!;
 
@@ -47,6 +48,7 @@ namespace DadsDecals
         {
             swatchStyle ??= new GUIStyle(GUI.skin.box) { normal = { background = Texture2D.whiteTexture } };
             selectedStyle ??= new GUIStyle(GUI.skin.button) { fontStyle = FontStyle.Bold };
+            sectionStyle ??= new GUIStyle(GUI.skin.button) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
 
             // One undo step per slider drag / text edit on the selected decal.
             var e = Event.current;
@@ -73,6 +75,20 @@ namespace DadsDecals
                 case 2: DrawLayoutsTab(car, layout); break;
                 case 3: DrawDebugTab(car); break;
             }
+        }
+
+        /// <summary>A fold-out header. Returns whether the section is open; folded sections are remembered.</summary>
+        private bool Section(string id, string title)
+        {
+            var collapsed = Main.Settings.Collapsed;
+            var open = !collapsed.Contains(id);
+            if (GUILayout.Button((open ? "▼  " : "►  ") + title, sectionStyle))
+            {
+                if (open) collapsed.Add(id); else collapsed.Remove(id);
+                Main.Settings.Save(Main.Mod);
+                open = !open;
+            }
+            return open;
         }
 
         private void SwitchTab(int newTab)
@@ -121,7 +137,7 @@ namespace DadsDecals
             else
             {
                 t.Text ??= new TextSpec { Font = Main.Settings.LastFont };
-                DrawTextEditor(t.Text, car, "place");
+                if (Section("place.text", "Text")) DrawTextEditor(t.Text, car, "place");
                 if (I.Mode != ToolMode.Place && GUILayout.Button("Place this text")) I.StartPlacing();
             }
 
@@ -147,8 +163,8 @@ namespace DadsDecals
             var perRow = Mathf.Max(1, (int)((rect.width - 40f) / (ThumbSize + 6f)));
             foreach (var group in Main.Library.Images.GroupBy(i => i.Category).OrderBy(g => g.Key))
             {
-                if (group.Key.Length > 0) GUILayout.Label(group.Key);
                 var items = group.OrderBy(i => i.Name).ToList();
+                if (!Section("cat:" + group.Key, $"{(group.Key.Length > 0 ? group.Key : "General")}  ({items.Count})")) continue;
                 for (var i = 0; i < items.Count; i += perRow)
                 {
                     GUILayout.BeginHorizontal();
@@ -231,39 +247,52 @@ namespace DadsDecals
             GUI.changed = false;
 
             Assets.MaterialFor(d, car, out var aspect, allowRender: false);
-            d.Size[0] = Slider("Width (m)", d.Size[0], 0.02f, 5f);
-            I.LockAspect = GUILayout.Toggle(I.LockAspect, "Keep image proportions");
+            if (Section("style.size", "Size and placement"))
+            {
+                d.Size[0] = Slider("Width (m)", d.Size[0], 0.02f, 5f);
+                I.LockAspect = GUILayout.Toggle(I.LockAspect, "Keep image proportions");
+                if (!I.LockAspect) d.Size[1] = Slider("Height (m)", d.Size[1], 0.02f, 5f);
+
+                d.Angle = Slider("Rotation (deg)", d.Angle, -180f, 180f);
+                if (I.SnapRotation) d.Angle = Mathf.Round(d.Angle / 15f) * 15f;
+                d.Size[2] = Slider("Projection depth (m)", d.Size[2], 0.05f, 3f);
+                d.WrapAngle = Slider("Wrap angle (deg)", d.WrapAngle, 5f, 89f);
+                d.Opacity = Slider("Opacity", d.Opacity, 0f, 1f);
+                GUILayout.BeginHorizontal();
+                d.MirrorX = GUILayout.Toggle(d.MirrorX, "Flip horizontally");
+                d.MirrorY = GUILayout.Toggle(d.MirrorY, "Flip vertically");
+                GUILayout.EndHorizontal();
+            }
+            // Proportions apply even when the section is folded away.
             if (I.LockAspect && aspect > 0.001f) d.Size[1] = d.Size[0] / aspect;
-            else d.Size[1] = Slider("Height (m)", d.Size[1], 0.02f, 5f);
 
-            d.Angle = Slider("Rotation (deg)", d.Angle, -180f, 180f);
-            if (I.SnapRotation) d.Angle = Mathf.Round(d.Angle / 15f) * 15f;
-            d.Size[2] = Slider("Projection depth (m)", d.Size[2], 0.05f, 3f);
-            d.WrapAngle = Slider("Wrap angle (deg)", d.WrapAngle, 5f, 89f);
-            d.Opacity = Slider("Opacity", d.Opacity, 0f, 1f);
-            GUILayout.BeginHorizontal();
-            d.MirrorX = GUILayout.Toggle(d.MirrorX, "Flip horizontally");
-            d.MirrorY = GUILayout.Toggle(d.MirrorY, "Flip vertically");
-            GUILayout.EndHorizontal();
+            if (Section("style.colour", "Colour"))
+                ColourField(d.Kind == DecalKind.Text ? "Tint (multiplies text colour)" : "Tint", id + ".tint", d.Tint);
 
-            ColourField(d.Kind == DecalKind.Text ? "Tint (multiplies text colour)" : "Tint", id + ".tint", d.Tint);
+            if (Section("style.finish", "Finish"))
+            {
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("Matte paint")) { d.Smoothness = 0.15f; d.Metallic = 0f; GUI.changed = true; }
+                if (GUILayout.Button("Gloss vinyl")) { d.Smoothness = 0.75f; d.Metallic = 0f; GUI.changed = true; }
+                if (GUILayout.Button("Metal plate")) { d.Smoothness = 0.55f; d.Metallic = 0.9f; GUI.changed = true; }
+                GUILayout.EndHorizontal();
+                d.Smoothness = Slider("Smoothness", d.Smoothness, 0f, 1f);
+                d.Metallic = Slider("Metallic", d.Metallic, 0f, 1f);
+                d.Glow = Slider("Glow", d.Glow, 0f, 3f);
+            }
 
-            GUILayout.Label("Finish");
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Matte paint")) { d.Smoothness = 0.15f; d.Metallic = 0f; GUI.changed = true; }
-            if (GUILayout.Button("Gloss vinyl")) { d.Smoothness = 0.75f; d.Metallic = 0f; GUI.changed = true; }
-            if (GUILayout.Button("Metal plate")) { d.Smoothness = 0.55f; d.Metallic = 0.9f; GUI.changed = true; }
-            GUILayout.EndHorizontal();
-            d.Smoothness = Slider("Smoothness", d.Smoothness, 0f, 1f);
-            d.Metallic = Slider("Metallic", d.Metallic, 0f, 1f);
-
-            GUILayout.Label("Weathering");
-            d.Grime = Slider("Grime (from livery)", d.Grime, 0f, 1f);
-            GUILayout.BeginHorizontal();
-            d.Chipping = Slider("Chipping", d.Chipping, 0f, 1f);
-            if (GUILayout.Button("New chips", GUILayout.Width(80))) { d.ChipSeed = UnityEngine.Random.Range(0f, 100f); GUI.changed = true; }
-            GUILayout.EndHorizontal();
-            d.Glow = Slider("Glow", d.Glow, 0f, 3f);
+            if (Section("style.weathering", "Weathering"))
+            {
+                GUILayout.BeginHorizontal();
+                d.Grime = Slider("Grime", d.Grime, 0f, 1f);
+                if (GUILayout.Button("New grime", GUILayout.Width(80))) { d.GrimeSeed = UnityEngine.Random.Range(0f, 100f); GUI.changed = true; }
+                GUILayout.EndHorizontal();
+                ColourField("Grime colour", id + ".grime", d.GrimeColor);
+                GUILayout.BeginHorizontal();
+                d.Chipping = Slider("Chipping", d.Chipping, 0f, 1f);
+                if (GUILayout.Button("New chips", GUILayout.Width(80))) { d.ChipSeed = UnityEngine.Random.Range(0f, 100f); GUI.changed = true; }
+                GUILayout.EndHorizontal();
+            }
 
             if (GUI.changed && layout != null)
             {
@@ -415,11 +444,14 @@ namespace DadsDecals
             }
             GUILayout.EndHorizontal();
 
-            for (var i = 0; i < layout.Decals.Count; i++)
+            if (Section("edit.list", $"Decals on this car ({layout.Decals.Count})"))
             {
-                var d = layout.Decals[i];
-                var label = $"{i + 1}. {d.DisplayName}{(d.PairId.Length > 0 ? "  (mirrored pair)" : "")}";
-                if (GUILayout.Button(label, d == I.Selected ? selectedStyle : GUI.skin.button)) I.Select(car, d);
+                for (var i = 0; i < layout.Decals.Count; i++)
+                {
+                    var d = layout.Decals[i];
+                    var label = $"{i + 1}. {d.DisplayName}{(d.PairId.Length > 0 ? "  (mirrored pair)" : "")}";
+                    if (GUILayout.Button(label, d == I.Selected ? selectedStyle : GUI.skin.button)) I.Select(car, d);
+                }
             }
 
             var sel = I.Selected;
@@ -477,7 +509,7 @@ namespace DadsDecals
             {
                 var before = GUI.changed;
                 GUI.changed = false;
-                DrawTextEditor(sel.Text, car, "edit");
+                if (Section("edit.text", "Text")) DrawTextEditor(sel.Text, car, "edit");
                 if (GUI.changed) { Undo.Changed(layout); Interaction.SyncTwin(layout, sel); }
                 GUI.changed |= before;
             }

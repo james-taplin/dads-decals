@@ -180,6 +180,7 @@ namespace DadsDecals
                 Undo.Record(layout);
                 var placed = ghost.Clone();
                 placed.ChipSeed = UnityEngine.Random.Range(0f, 100f);
+                placed.GrimeSeed = UnityEngine.Random.Range(0f, 100f);
                 if (MirrorPlace)
                 {
                     placed.PairId = Guid.NewGuid().ToString("N");

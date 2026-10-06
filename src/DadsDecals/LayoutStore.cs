@@ -53,7 +53,9 @@ namespace DadsDecals
 
         public float Smoothness = 0.35f;
         public float Metallic;
-        public float Grime;
+        public float Grime;                // procedural grime strength
+        public float GrimeSeed;
+        public float[] GrimeColor = { 0.18f, 0.15f, 0.12f, 1f };
         public float Chipping;
         public float ChipSeed;
         public float Glow;
@@ -68,6 +70,7 @@ namespace DadsDecals
             c.Rotation = (float[])Rotation.Clone();
             c.Size = (float[])Size.Clone();
             c.Tint = (float[])Tint.Clone();
+            c.GrimeColor = (float[])GrimeColor.Clone();
             return c;
         }
 
@@ -86,6 +89,8 @@ namespace DadsDecals
             Smoothness = o.Smoothness;
             Metallic = o.Metallic;
             Grime = o.Grime;
+            GrimeSeed = o.GrimeSeed;
+            GrimeColor = (float[])o.GrimeColor.Clone();
             Chipping = o.Chipping;
             ChipSeed = o.ChipSeed;
             Glow = o.Glow;

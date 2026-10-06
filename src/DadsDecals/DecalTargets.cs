@@ -10,14 +10,14 @@ namespace DadsDecals
     {
         public readonly MeshRenderer Renderer;
         public readonly Mesh Mesh;
-        public readonly Material[] Materials;   // per submesh, for the livery texture under the decal
+
         public readonly Transform Anchor;       // car root, or the bogie this renderer belongs to
 
         public DecalTarget(MeshRenderer renderer, Mesh mesh, Transform anchor)
         {
             Renderer = renderer;
             Mesh = mesh;
-            Materials = renderer.sharedMaterials;
+
             Anchor = anchor;
         }
     }

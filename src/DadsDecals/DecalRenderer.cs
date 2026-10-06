@@ -22,13 +22,13 @@ namespace DadsDecals
         private static readonly int GlossId = Shader.PropertyToID("_Glossiness");
         private static readonly int MetallicId = Shader.PropertyToID("_Metallic");
         private static readonly int GrimeId = Shader.PropertyToID("_Grime");
+        private static readonly int GrimeSeedId = Shader.PropertyToID("_GrimeSeed");
+        private static readonly int GrimeColorId = Shader.PropertyToID("_GrimeColor");
         private static readonly int ChippingId = Shader.PropertyToID("_Chipping");
         private static readonly int ChipSeedId = Shader.PropertyToID("_ChipSeed");
         private static readonly int GlowId = Shader.PropertyToID("_Glow");
         private static readonly int HighlightId = Shader.PropertyToID("_Highlight");
-        private static readonly int BaseTexId = Shader.PropertyToID("_BaseTex");
-        private static readonly int BaseTexStId = Shader.PropertyToID("_BaseTex_ST");
-        private static readonly int MainTexId = Shader.PropertyToID("_MainTex");
+
 
         private TrainCar car = null!;
         private List<DecalTarget> targets = new List<DecalTarget>();
@@ -114,6 +114,8 @@ namespace DadsDecals
             mpb.SetFloat(GlossId, d.Smoothness);
             mpb.SetFloat(MetallicId, d.Metallic);
             mpb.SetFloat(GrimeId, d.Grime);
+            mpb.SetFloat(GrimeSeedId, d.GrimeSeed);
+            mpb.SetColor(GrimeColorId, new Color(d.GrimeColor[0], d.GrimeColor[1], d.GrimeColor[2], d.GrimeColor[3]));
             mpb.SetFloat(ChippingId, d.Chipping);
             mpb.SetFloat(ChipSeedId, d.ChipSeed);
             mpb.SetFloat(GlowId, d.Glow);
@@ -128,23 +130,7 @@ namespace DadsDecals
                 if (!r.bounds.Intersects(bounds)) continue;
                 var m = r.localToWorldMatrix;
                 for (var sub = 0; sub < t.Mesh.subMeshCount; sub++)
-                {
-                    // The livery under the decal, for grime. MPB values are copied per DrawMesh call.
-                    var mat = sub < t.Materials.Length ? t.Materials[sub] : null;
-                    if (d.Grime > 0 && mat != null && mat.HasProperty(MainTexId) && mat.mainTexture != null)
-                    {
-                        mpb.SetTexture(BaseTexId, mat.mainTexture);
-                        var s = mat.mainTextureScale;
-                        var o = mat.mainTextureOffset;
-                        mpb.SetVector(BaseTexStId, new Vector4(s.x, s.y, o.x, o.y));
-                    }
-                    else
-                    {
-                        mpb.SetTexture(BaseTexId, Texture2D.whiteTexture);
-                        mpb.SetVector(BaseTexStId, new Vector4(1, 1, 0, 0));
-                    }
                     Graphics.DrawMesh(t.Mesh, m, material, r.gameObject.layer, null, sub, mpb, ShadowCastingMode.Off, true);
-                }
                 draws++;
             }
             return draws;

@@ -9,6 +9,8 @@ namespace DadsDecals
         /// <summary>The player's own colour swatches, as hex (RRGGBB).</summary>
         public List<string> SavedColours = new List<string>();
         public string LastFont = "Arial";
+        /// <summary>Panel sections the player has folded away.</summary>
+        public List<string> Collapsed = new List<string>();
 
         public override void Save(UnityModManager.ModEntry modEntry) => Save(this, modEntry);
     }
