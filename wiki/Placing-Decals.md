@@ -10,7 +10,7 @@ The Decals window has four tabs:
 | **Place** | Choosing an image or text, setting it up, and placing new decals |
 | **Edit** | Selecting, moving and changing decals you've already placed |
 | **Layouts** | Templates, copying, export/import and layouts per paint scheme |
-| **Debug** | Aim readout and diagnostics, for troubleshooting |
+| **Debug** | Performance settings and readout, aim readout and diagnostics |
 
 Under the tabs, the **Car:** line shows which car the panel is working on: its ID (e.g. `L-090`), its livery and how many decals it has. That's the car you last pointed at, or failing that the one you're standing on, or failing that your last loco.
 

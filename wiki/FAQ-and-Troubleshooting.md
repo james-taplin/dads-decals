@@ -47,7 +47,15 @@ Fixed in 0.3.0. Locomotive Mesh Splitter mirrors the S060's body pieces, and old
 No. It works on vanilla and custom (CCL) cars as they are.
 
 ## Does it affect performance?
-Each decal redraws the few parts of the car it touches, only in the camera you're looking through. A few dozen decals on a train should be unnoticeable. Text decals are rendered once and cached.
+Each decal redraws the few parts of the car it touches, only in the camera you're looking through. A few dozen decals on a train should be unnoticeable. Text decals are rendered once and cached, and which parts each decal touches is worked out once and remembered.
+
+The **Debug** tab's **Performance** section has two settings:
+- **Decal detail**: *High* draws every decal; *Medium* (the default) skips decals under 2 pixels on screen; *Low* skips anything under 6 pixels. Far-off placards disappear first; big lettering stays.
+- **Max draw distance**: decals further away than this aren't drawn. *No limit* by default.
+
+It also shows how many decals were drawn and skipped last frame, and how much time Dad's Decals takes per frame.
+
+The selected decal and the placement preview are never skipped.
 
 ## Reporting a bug
 Open an issue on [GitHub](https://github.com/james-taplin/dads-decals/issues) with:

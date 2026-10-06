@@ -7,9 +7,11 @@ namespace DadsDecals
 {
     /// <summary>
     /// Lives on a TrainCar. Every frame, for each decal in the car's layout (plus the placement ghost),
-    /// redraws the overlapped full-detail exterior meshes with the projector material.
+    /// redraws the overlapped exterior meshes with the projector material.
     /// A decal is only drawn on renderers under its own anchor (body or bogie), so it doesn't slide
-    /// when a bogie swings. Nothing is allocated per frame.
+    /// when a bogie swings. Which parts a decal overlaps is worked out once and cached until the
+    /// decal (or the car's parts) change; decals too small on screen or too far away are skipped.
+    /// Nothing is allocated per frame.
     /// </summary>
     internal sealed class DecalRenderer : MonoBehaviour
     {
@@ -33,6 +35,22 @@ namespace DadsDecals
         private TrainCar car = null!;
         private List<DecalTarget> targets = new List<DecalTarget>();
         private readonly Dictionary<DecalPlacement, int> queues = new Dictionary<DecalPlacement, int>();
+
+        /// <summary>The parts a decal overlaps, valid while its anchor-space box and the car's parts are unchanged.</summary>
+        private sealed class Overlap
+        {
+            public Matrix4x4 Local;
+            public Transform? Anchor;
+            public int TargetsVersion = -1;
+            public readonly List<DecalTarget> Parts = new List<DecalTarget>();
+        }
+        private readonly Dictionary<DecalPlacement, Overlap> overlaps = new Dictionary<DecalPlacement, Overlap>();
+        private readonly Overlap ghostOverlap = new Overlap();
+        private readonly Overlap ghostTwinOverlap = new Overlap();
+        private int targetsVersion;
+        // Parts can be animated relative to the body (rods, doors); a little slack keeps the cache valid.
+        private const float OverlapMargin = 0.25f;
+        private static readonly float[] DetailMinPixels = { 0f, 2f, 6f };   // High, Medium, Low
         private MaterialPropertyBlock mpb = null!;
         private readonly Vector3[] corners = new Vector3[8];
         private TrainCarPaint? paint;
@@ -65,7 +83,11 @@ namespace DadsDecals
             if (paint != null) paint.OnThemeChanged -= OnThemeChanged;
         }
 
-        public void RefreshTargets() => targets = DecalTargets.Find(car);
+        public void RefreshTargets()
+        {
+            targets = DecalTargets.Find(car);
+            targetsVersion++;
+        }
 
         private void OnThemeChanged(TrainCarPaint p)
         {
@@ -83,38 +105,58 @@ namespace DadsDecals
             viewCamera = PlayerManager.ActiveCamera != null ? PlayerManager.ActiveCamera : PlayerManager.PlayerCamera;
             if (viewCamera == null) return;
             var layout = Main.Layouts.Get(car.CarGUID);
+            if ((layout == null || layout.Decals.Count == 0) && Ghost == null) return;
+            RenderStats.BeginCar();
             // No selection pulse while the panel is closed or the mouse isn't free.
             var selected = Interaction.Instance != null && Interaction.Instance.Active ? Interaction.Instance.Selected : null;
             if (layout != null)
             {
                 Layers.Assign(layout.Decals, queues);
                 foreach (var d in layout.Decals)
-                    Draw(d, d == selected || (selected != null && d.PairId.Length > 0 && d.PairId == selected.PairId), queues[d]);
+                {
+                    var isSelected = d == selected || (selected != null && d.PairId.Length > 0 && d.PairId == selected.PairId);
+                    if (!overlaps.TryGetValue(d, out var o)) overlaps[d] = o = new Overlap();
+                    Draw(d, isSelected, queues[d], o, cullable: !isSelected);
+                }
+                if (overlaps.Count > layout.Decals.Count + 8) PruneOverlaps(layout);
             }
-            GhostDraws = Ghost != null ? Draw(Ghost, false, Layers.GhostQueue) : 0;
-            if (GhostTwin != null) Draw(GhostTwin, false, Layers.GhostQueue);
+            GhostDraws = Ghost != null ? Draw(Ghost, false, Layers.GhostQueue, ghostOverlap, cullable: false) : 0;
+            if (GhostTwin != null) Draw(GhostTwin, false, Layers.GhostQueue, ghostTwinOverlap, cullable: false);
+            RenderStats.EndCar();
+        }
+
+        private void PruneOverlaps(LocoLayout layout)
+        {
+            foreach (var d in new List<DecalPlacement>(overlaps.Keys))
+                if (!layout.Decals.Contains(d)) overlaps.Remove(d);
         }
 
         /// <summary>World matrix of the decal box (unit cube -> world), including roll and mirroring.</summary>
-        public static Matrix4x4 DecalToWorld(Transform anchor, DecalPlacement d)
+        public static Matrix4x4 DecalToWorld(Transform anchor, DecalPlacement d) => anchor.localToWorldMatrix * DecalToAnchor(d);
+
+        /// <summary>The decal box in its anchor's space (unit cube -> anchor).</summary>
+        private static Matrix4x4 DecalToAnchor(DecalPlacement d)
         {
             var size = new Vector3(d.Size[0] * (d.MirrorX ? -1 : 1), d.Size[1] * (d.MirrorY ? -1 : 1), d.Size[2]);
             var rot = new Quaternion(d.Rotation[0], d.Rotation[1], d.Rotation[2], d.Rotation[3]) * Quaternion.AngleAxis(d.Angle, Vector3.forward);
-            var local = Matrix4x4.TRS(new Vector3(d.Position[0], d.Position[1], d.Position[2]), rot, size);
-            return anchor.localToWorldMatrix * local;
+            return Matrix4x4.TRS(new Vector3(d.Position[0], d.Position[1], d.Position[2]), rot, size);
         }
 
         public Matrix4x4 DecalToWorld(DecalPlacement d) => DecalToWorld(DecalTargets.ResolveAnchor(car, d.Anchor), d);
 
-        private int Draw(DecalPlacement d, bool highlight, int queue)
+        private int Draw(DecalPlacement d, bool highlight, int queue, Overlap overlap, bool cullable)
         {
+            var anchor = DecalTargets.ResolveAnchor(car, d.Anchor);
+            var local = DecalToAnchor(d);
+            var toWorld = anchor.localToWorldMatrix * local;
+            if (cullable && TooSmallOrFar(toWorld)) { RenderStats.Culled(); return 0; }
+
             var baseMaterial = Assets.MaterialFor(d, car, out _);
             if (baseMaterial == null) return 0;
             var material = Layers.AtQueue(baseMaterial, queue);
 
-            var anchor = DecalTargets.ResolveAnchor(car, d.Anchor);
-            var toWorld = DecalToWorld(anchor, d);
-            var bounds = WorldBounds(toWorld);
+            if (overlap.TargetsVersion != targetsVersion || overlap.Anchor != anchor || overlap.Local != local)
+                FindOverlaps(overlap, anchor, local, toWorld);
 
             mpb.Clear();
             mpb.SetMatrix(WorldToDecalId, toWorld.inverse);
@@ -134,18 +176,63 @@ namespace DadsDecals
             mpb.SetFloat(HighlightId, highlight ? 1f : 0f);
 
             var draws = 0;
-            foreach (var t in targets)
+            foreach (var t in overlap.Parts)
             {
-                if (t.Anchor != anchor) continue;
                 var r = t.Renderer;
+                // isVisible is false for detail levels (LODs) not currently shown, and for parts off screen.
                 if (r == null || !r.enabled || !r.isVisible || !r.gameObject.activeInHierarchy) continue;
-                if (!r.bounds.Intersects(bounds)) continue;
                 var m = r.localToWorldMatrix;
                 for (var sub = 0; sub < t.Mesh.subMeshCount; sub++)
                     Graphics.DrawMesh(t.Mesh, m, material, r.gameObject.layer, viewCamera, sub, mpb, ShadowCastingMode.Off, true);
                 draws++;
             }
+            RenderStats.Decal(draws);
             return draws;
+        }
+
+        /// <summary>Skips decals smaller on screen than the Decal detail setting allows, or beyond the max distance.</summary>
+        private bool TooSmallOrFar(Matrix4x4 toWorld)
+        {
+            var settings = Main.Settings;
+            var minPx = DetailMinPixels[Mathf.Clamp(settings.DecalDetail, 0, DetailMinPixels.Length - 1)];
+            if (minPx <= 0 && settings.MaxDistance <= 0) return false;
+            var cam = viewCamera!;
+            var dist = Vector3.Distance(toWorld.GetColumn(3), cam.transform.position);
+            if (settings.MaxDistance > 0 && dist > settings.MaxDistance) return true;
+            if (minPx <= 0 || cam.orthographic || dist < 1f) return false;
+            var size = Mathf.Max(((Vector3)toWorld.GetColumn(0)).magnitude, ((Vector3)toWorld.GetColumn(1)).magnitude);
+            var pixels = size / (2f * dist * Mathf.Tan(cam.fieldOfView * 0.5f * Mathf.Deg2Rad)) * cam.pixelHeight;
+            return pixels < minPx;
+        }
+
+        /// <summary>Works out which parts (under the same anchor) the decal box overlaps, using each part's real triangle bounds.</summary>
+        private void FindOverlaps(Overlap overlap, Transform anchor, Matrix4x4 local, Matrix4x4 toWorld)
+        {
+            overlap.Parts.Clear();
+            overlap.Local = local;
+            overlap.Anchor = anchor;
+            overlap.TargetsVersion = targetsVersion;
+            var box = WorldBounds(toWorld);
+            box.Expand(OverlapMargin * 2);
+            foreach (var t in targets)
+            {
+                if (t.Anchor != anchor || t.Renderer == null) continue;
+                if (TransformBounds(t.Renderer.localToWorldMatrix, t.LocalBounds).Intersects(box)) overlap.Parts.Add(t);
+            }
+        }
+
+        private Bounds TransformBounds(Matrix4x4 m, Bounds b)
+        {
+            var i = 0;
+            var min = b.min;
+            var max = b.max;
+            for (var x = 0; x < 2; x++)
+            for (var y = 0; y < 2; y++)
+            for (var z = 0; z < 2; z++)
+                corners[i++] = m.MultiplyPoint3x4(new Vector3(x == 0 ? min.x : max.x, y == 0 ? min.y : max.y, z == 0 ? min.z : max.z));
+            var result = new Bounds(corners[0], Vector3.zero);
+            for (i = 1; i < 8; i++) result.Encapsulate(corners[i]);
+            return result;
         }
 
         private Bounds WorldBounds(Matrix4x4 toWorld)
