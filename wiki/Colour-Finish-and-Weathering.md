@@ -1,6 +1,6 @@
 # Colour, finish and weathering
 
-![The settings sections expanded, with the colour picker open](../docs/images/gui-settings.png)
+![The Size and placement, Colour, Finish and Weathering sections](../docs/images/gui-settings.png)
 
 These sections appear under **Settings for the next decal** in the Place tab, and for the selected decal in the Edit tab.
 

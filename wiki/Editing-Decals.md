@@ -1,6 +1,6 @@
 # Editing decals
 
-![The Edit tab with a decal selected](../docs/images/gui-edit.png)
+![The Edit tab with a decal selected and the colour picker open](../docs/images/gui-edit.png)
 
 Open the **Edit** tab to work on decals you've already placed.
 

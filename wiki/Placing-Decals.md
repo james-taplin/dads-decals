@@ -25,7 +25,7 @@ Section headers with ▼/► (palette categories, *Size and placement*, *Colour*
 
 While placing, the panel shows an **Aiming at:** line and how many parts the preview is drawn on. It's mainly useful if the preview doesn't appear (see [FAQ](FAQ-and-Troubleshooting.md)).
 
-![Preview following the mouse over a loco](../docs/images/gui-placing-preview.png)
+![Placing a text decal: the Aiming at line and the live preview on the tender](../docs/images/gui-place-text.png)
 
 ## Placement options
 These sit just above the palette:

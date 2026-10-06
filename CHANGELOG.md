@@ -25,5 +25,4 @@ All notable changes to Dad's Decals. Versions follow [semantic versioning](https
 - Placement missed the loco in the exterior camera, because it aimed from the player's head.
 - The decal box missed the paint on locos whose collision shapes sit away from the visible body.
 - Decals showed through shadows and drew on top of fog. They're now in the last opaque render slot.
-- A stray white dot appeared on screen and over menus, because decals were drawn into every camera. They now draw only into the view camera.
 - The mod crashed while loading at the main menu.
