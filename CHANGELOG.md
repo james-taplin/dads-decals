@@ -26,3 +26,4 @@ All notable changes to Dad's Decals. Versions follow [semantic versioning](https
 - The decal box missed the paint on locos whose collision shapes sit away from the visible body.
 - Decals showed through shadows and drew on top of fog. They're now in the last opaque render slot.
 - The mod crashed while loading at the main menu.
+- No preview or decals on locos with mirrored parts, such as the S060 with Locomotive Mesh Splitter (it mirrors its split body pieces). Decals now draw on both sides of a surface and rely on the facing check instead.

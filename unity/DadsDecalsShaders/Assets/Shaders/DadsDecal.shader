@@ -30,6 +30,10 @@ Shader "DadsDecals/Projected"
         // and it drew on top of the fog.)
         Tags { "Queue"="AlphaTest+49" "RenderType"="Transparent" "IgnoreProjector"="True" "ForceNoShadowCasting"="True" "DisableBatching"="True" }
         Offset -1, -1
+        // Both sides: Graphics.DrawMesh doesn't flip culling for mirrored (negative-scale) targets,
+        // e.g. Locomotive Mesh Splitter's S060 pieces, so back-face culling hid the decal there.
+        // The facing clip below (mesh normal vs projection direction) still rejects back faces.
+        Cull Off
 
         CGPROGRAM
         #pragma surface surf Standard decal:blend vertex:vert nolightmap nodynlightmap nodirlightmap nometa noinstancing

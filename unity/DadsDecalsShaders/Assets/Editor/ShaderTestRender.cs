@@ -50,6 +50,16 @@ public static class ShaderTestRender
         boiler.transform.localRotation = Quaternion.Euler(0, 0, 90);
         boiler.transform.localScale = new Vector3(1.6f, 3f, 1.6f);
         boiler.GetComponent<Renderer>().sharedMaterial = grey;
+        // DADSDECALS_TEST_MIRROR=1: mirror the boiler (scale -1 on X, about the decal centre), like
+        // Locomotive Mesh Splitter's S060 pieces. Same shape, flipped winding.
+        if (System.Environment.GetEnvironmentVariable("DADSDECALS_TEST_MIRROR") == "1")
+        {
+            var mirror = new GameObject("Mirror").transform;
+            mirror.SetParent(root.transform);
+            mirror.position = new Vector3(0.5f, 0, 0);
+            boiler.transform.SetParent(mirror, true);
+            mirror.localScale = new Vector3(-1, 1, 1);
+        }
         var cab = GameObject.CreatePrimitive(PrimitiveType.Cube);
         cab.transform.SetParent(root.transform);
         cab.transform.localPosition = new Vector3(4f, 1.8f, 0);
@@ -75,17 +85,6 @@ public static class ShaderTestRender
             else mpb.SetVector(parts[0].Trim(), new Vector4(nums[0], nums[1], nums[2], nums.Length > 3 ? nums[3] : 1));
         }
 
-        // Same approach as the mod: draw each target's mesh again with the decal material.
-        foreach (var target in new[] { boiler, cab })
-        {
-            var copy = new GameObject(target.name + "_decal");
-            copy.transform.SetParent(target.transform, false);
-            copy.AddComponent<MeshFilter>().sharedMesh = target.GetComponent<MeshFilter>().sharedMesh;
-            var r = copy.AddComponent<MeshRenderer>();
-            r.sharedMaterial = decalMat;
-            r.SetPropertyBlock(mpb);
-        }
-
         var cam = new GameObject("Cam").AddComponent<Camera>();
         cam.transform.SetParent(root.transform);
         cam.transform.position = new Vector3(1.5f, 2.2f, -7f);
@@ -106,6 +105,11 @@ public static class ShaderTestRender
             cam.renderingPath = path;
             var rt = new RenderTexture(800, 450, 24, RenderTextureFormat.ARGB32);
             cam.targetTexture = rt;
+            // Same approach as the mod: Graphics.DrawMesh of each target's mesh with the decal
+            // material, into this camera only (queued draws are used by its next render).
+            foreach (var target in new[] { boiler, cab })
+                Graphics.DrawMesh(target.GetComponent<MeshFilter>().sharedMesh, target.transform.localToWorldMatrix,
+                    decalMat, 0, cam, 0, mpb, UnityEngine.Rendering.ShadowCastingMode.Off, true);
             cam.Render();
             RenderTexture.active = rt;
             var outTex = new Texture2D(rt.width, rt.height, TextureFormat.RGB24, false);
