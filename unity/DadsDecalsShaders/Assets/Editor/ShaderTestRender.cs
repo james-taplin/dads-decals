@@ -20,6 +20,18 @@ public static class ShaderTestRender
         light.type = LightType.Directional;
         light.transform.rotation = Quaternion.Euler(40, -30, 0);
         light.transform.parent = root.transform;
+        light.shadows = LightShadows.Soft;
+        QualitySettings.shadowDistance = 60;
+
+        // A bar between the sun and the decal, so its shadow falls across the decal (and the boiler).
+        var bar = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        bar.transform.SetParent(root.transform);
+        // Aim at the decal centre's surface point (boiler front at z = -0.8), horizontal along X.
+        bar.transform.position = new Vector3(0.5f, 1.6f, -0.8f) - light.transform.forward * 1.0f;
+        bar.transform.rotation = Quaternion.identity;
+        bar.transform.localScale = new Vector3(0.25f, 6f, 0.25f);   // vertical post: stripe through the decal
+        bar.transform.position += new Vector3(-0.35f, 0, 0);
+        bar.GetComponent<Renderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
 
         // "Loco" parts: a long cylinder (boiler) and a box (cab), with grey Standard material.
         // Livery stand-in: vertical grime streaks on a mid tone, with mipmaps like a real livery.

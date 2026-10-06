@@ -22,8 +22,11 @@ Shader "DadsDecals/Projected"
 
     SubShader
     {
-        // Forward-rendered after the deferred opaque pass, before regular transparents (glass).
-        Tags { "Queue"="Transparent-100" "RenderType"="Transparent" "IgnoreProjector"="True" "ForceNoShadowCasting"="True" "DisableBatching"="True" }
+        // Queue 2499 = the last opaque slot. Unity only gives shadows to queues <= 2500, and opaque
+        // queues draw before screen-space fog and before transparents (smoke, steam, glass), so the
+        // decal is shadowed and fogged like the paint under it. (It was Transparent-100: no shadows,
+        // and it drew on top of the fog.)
+        Tags { "Queue"="AlphaTest+49" "RenderType"="Transparent" "IgnoreProjector"="True" "ForceNoShadowCasting"="True" "DisableBatching"="True" }
         Offset -1, -1
 
         CGPROGRAM

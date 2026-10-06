@@ -14,9 +14,12 @@ namespace DadsDecals
     internal static class TextDecals
     {
         private const int Layer = 31;
-        private const int FontSize = 128;
-        private const int PixelsPerLine = 256;
-        private const int MaxPixels = 2048;
+        private const int DefaultFontSize = 128;
+        private const int MaxPixels = 4096;
+        // Resolution steps (pixels per line of text). The font is rasterised at the same size,
+        // so a big decal gets genuinely sharper glyphs, not an upscaled small render.
+        private static readonly int[] Steps = { 128, 256, 512, 768 };
+        private const float PixelsPerMetre = 900f;   // per metre of line height on the car
         private static readonly Vector3 StudioPosition = new Vector3(0, -5000, 0);
 
         private sealed class Entry
@@ -30,7 +33,7 @@ namespace DadsDecals
         private const int MaxCached = 48;
         private static readonly Dictionary<string, Entry> cache = new Dictionary<string, Entry>();
         // Requests from the GUI: rendering with a camera mid-OnGUI is unsafe, so they wait for Update.
-        private static readonly Dictionary<string, (TextSpec spec, string text)> pending = new Dictionary<string, (TextSpec, string)>();
+        private static readonly Dictionary<string, (TextSpec spec, string text, int px)> pending = new Dictionary<string, (TextSpec, string, int)>();
         private static readonly Dictionary<string, Font> fonts = new Dictionary<string, Font>(StringComparer.OrdinalIgnoreCase);
         private static string[]? fontNames;
         private static Material? textMaterial;
@@ -63,10 +66,10 @@ namespace DadsDecals
         /// Material for this text decal on this car, or null if not available (yet).
         /// With <paramref name="allowRender"/> false (GUI code) a missing texture is queued for <see cref="RenderPending"/>.
         /// </summary>
-        public static Material? GetMaterial(TextSpec spec, TrainCar? car, out float aspect, bool allowRender = true)
+        public static Material? GetMaterial(TextSpec spec, TrainCar? car, out float aspect, bool allowRender = true, float decalHeight = 0.5f)
         {
             aspect = 1;
-            var e = Get(spec, car, allowRender);
+            var e = Get(spec, car, allowRender, decalHeight);
             if (e == null) return null;
             aspect = e.Aspect;
             if (e.Material == null && Assets.DecalShader != null)
@@ -75,7 +78,16 @@ namespace DadsDecals
         }
 
         /// <summary>For GUI previews: cached texture, or null after queueing it to render.</summary>
-        public static Texture2D? GetTexture(TextSpec spec, TrainCar? car) => Get(spec, car, allowRender: false)?.Texture;
+        public static Texture2D? GetTexture(TextSpec spec, TrainCar? car) => Get(spec, car, allowRender: false, decalHeight: 0)?.Texture;
+
+        /// <summary>Pixels per line for text on a decal this tall (metres): the smallest step that's sharp enough.</summary>
+        private static int ResolutionFor(float decalHeight, int lines)
+        {
+            var wanted = decalHeight / Mathf.Max(1, lines) * PixelsPerMetre;
+            foreach (var s in Steps)
+                if (s >= wanted) return s;
+            return Steps[Steps.Length - 1];
+        }
 
         /// <summary>Renders queued GUI requests. Called every frame from Interaction.Update.</summary>
         public static void RenderPending()
@@ -83,14 +95,15 @@ namespace DadsDecals
             if (pending.Count == 0) return;
             var first = pending.First();
             pending.Remove(first.Key);
-            if (!cache.ContainsKey(first.Key)) Store(first.Key, first.Value.text, first.Value.spec);
+            if (!cache.ContainsKey(first.Key)) Store(first.Key, first.Value.text, first.Value.spec, first.Value.px);
         }
 
-        private static Entry? Get(TextSpec spec, TrainCar? car, bool allowRender)
+        private static Entry? Get(TextSpec spec, TrainCar? car, bool allowRender, float decalHeight)
         {
             var text = Resolve(spec.Text, car);
             if (string.IsNullOrWhiteSpace(text)) return null;
-            var key = string.Join("|", text, spec.Font, spec.Bold, spec.Italic, Hex(spec.Color), Hex(spec.OutlineColor), spec.Outline.ToString("0.###"), spec.Align);
+            var px = ResolutionFor(decalHeight, text.Split('\n').Length);
+            var key = string.Join("|", text, spec.Font, spec.Bold, spec.Italic, Hex(spec.Color), Hex(spec.OutlineColor), spec.Outline.ToString("0.###"), spec.Align, px);
             if (cache.TryGetValue(key, out var e))
             {
                 e.LastUsed = Time.unscaledTime;
@@ -98,18 +111,18 @@ namespace DadsDecals
             }
             if (!allowRender)
             {
-                pending[key] = (spec.Clone(), text);
+                pending[key] = (spec.Clone(), text, px);
                 return null;
             }
-            return Store(key, text, spec);
+            return Store(key, text, spec, px);
         }
 
-        private static Entry? Store(string key, string text, TextSpec spec)
+        private static Entry? Store(string key, string text, TextSpec spec, int px)
         {
             Entry? e;
             try
             {
-                e = Render(text, spec);
+                e = Render(text, spec, px);
             }
             catch (Exception ex)
             {
@@ -148,26 +161,26 @@ namespace DadsDecals
         private static Font? GetFont(string name)
         {
             if (fonts.TryGetValue(name, out var f) && f != null) return f;
-            f = Font.CreateDynamicFontFromOSFont(name, FontSize);
+            f = Font.CreateDynamicFontFromOSFont(name, DefaultFontSize);
             if (f != null) fonts[name] = f;
             return f;
         }
 
-        private static Entry? Render(string text, TextSpec spec)
+        private static Entry? Render(string text, TextSpec spec, int pxPerLine)
         {
             var font = GetFont(spec.Font) ?? GetFont("Arial");
             if (font == null || Assets.TextShader == null) return null;
             textMaterial ??= new Material(Assets.TextShader);
 
             var style = spec.Bold && spec.Italic ? FontStyle.BoldAndItalic : spec.Bold ? FontStyle.Bold : spec.Italic ? FontStyle.Italic : FontStyle.Normal;
-            font.RequestCharactersInTexture(text, FontSize, style);
+            font.RequestCharactersInTexture(text, pxPerLine, style);
             textMaterial.mainTexture = font.material.mainTexture;
 
             var root = new GameObject("DadsDecals_TextStudio");
             try
             {
                 root.transform.position = StudioPosition;
-                var main = MakeText(root.transform, font, text, spec, style, ToColor(spec.Color), Vector3.zero);
+                var main = MakeText(root.transform, font, text, spec, style, pxPerLine, ToColor(spec.Color), Vector3.zero);
                 var bounds = main.GetComponent<MeshRenderer>().bounds;
                 if (bounds.size.x <= 0 || bounds.size.y <= 0) return null;
 
@@ -175,11 +188,12 @@ namespace DadsDecals
                 var outline = Mathf.Clamp(spec.Outline, 0, 0.15f) * lineHeight;
                 if (outline > 0)
                 {
-                    // 8 copies around the text in the outline colour, behind the main text.
-                    for (var i = 0; i < 8; i++)
+                    // 16 copies around the text in the outline colour, behind the main text
+                    // (8 left visible bumps on thick outlines).
+                    for (var i = 0; i < 16; i++)
                     {
-                        var a = i * Mathf.PI / 4;
-                        MakeText(root.transform, font, text, spec, style, ToColor(spec.OutlineColor),
+                        var a = i * Mathf.PI / 8;
+                        MakeText(root.transform, font, text, spec, style, pxPerLine, ToColor(spec.OutlineColor),
                             new Vector3(Mathf.Cos(a) * outline, Mathf.Sin(a) * outline, 0.1f));
                     }
                 }
@@ -187,7 +201,7 @@ namespace DadsDecals
                 var pad = outline + lineHeight * 0.05f;
                 var worldW = bounds.size.x + pad * 2;
                 var worldH = bounds.size.y + pad * 2;
-                var scale = Mathf.Min(PixelsPerLine / lineHeight, MaxPixels / worldW, MaxPixels / worldH);
+                var scale = Mathf.Min(pxPerLine / lineHeight, MaxPixels / worldW, MaxPixels / worldH);
                 var w = Mathf.Max(8, Mathf.RoundToInt(worldW * scale));
                 var h = Mathf.Max(8, Mathf.RoundToInt(worldH * scale));
 
@@ -242,14 +256,14 @@ namespace DadsDecals
             }
         }
 
-        private static GameObject MakeText(Transform parent, Font font, string text, TextSpec spec, FontStyle style, Color color, Vector3 offset)
+        private static GameObject MakeText(Transform parent, Font font, string text, TextSpec spec, FontStyle style, int fontSize, Color color, Vector3 offset)
         {
             var go = new GameObject("text") { layer = Layer };
             go.transform.SetParent(parent, false);
             go.transform.localPosition = offset;
             var tm = go.AddComponent<TextMesh>();
             tm.font = font;
-            tm.fontSize = FontSize;
+            tm.fontSize = fontSize;
             tm.fontStyle = style;
             tm.characterSize = 0.05f;
             tm.richText = false;

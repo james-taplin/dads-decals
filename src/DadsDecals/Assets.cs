@@ -47,7 +47,7 @@ namespace DadsDecals
         {
             aspect = 1;
             if (d.Kind == DecalKind.Text)
-                return d.Text != null ? TextDecals.GetMaterial(d.Text, car, out aspect, allowRender) : null;
+                return d.Text != null ? TextDecals.GetMaterial(d.Text, car, out aspect, allowRender, d.Size[1]) : null;
             if (!Main.Library.TryGet(d.Image, out var image)) return null;
             aspect = image.Texture != null && image.Texture.height > 0 ? (float)image.Texture.width / image.Texture.height : 1;
             return image.Material;
