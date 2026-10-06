@@ -1,6 +1,6 @@
 # Text and road numbers
 
-![The Place tab in Text mode](../docs/images/gui-place-text.png)
+![The Place tab in Text mode, with the text colour picker open and the rendered preview below](../docs/images/gui-place-text.png)
 
 Text decals let you type numbers, names and lettering without making an image first.
 

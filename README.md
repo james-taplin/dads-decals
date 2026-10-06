@@ -17,7 +17,7 @@ A Derail Valley mod for putting decals on locomotives, tenders and wagons: road 
 - **Layouts**: saved per car in your save, templates per livery, copy between cars, export/import for sharing, and a layout per paint scheme (including Skin Manager skins).
 - **Example decals included**: warning stripes, OSHA-style placards, voltage labels, fuel labels, access markings and DVRT-style logos.
 
-![The Decals window in the Edit tab, next to a tender with image and text decals](docs/images/gui-edit.png)
+![The Decals window in the Edit tab, with the selected logo pulsing on the tender](docs/images/gui-edit.png)
 
 | | |
 |---|---|

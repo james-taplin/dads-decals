@@ -12,6 +12,8 @@ These sections appear under **Settings for the next decal** in the Place tab, an
 That's why some examples have a white "(tintable)" version.
 
 ### The colour picker
+![The colour picker open for a text colour](../docs/images/gui-colour-picker.png)
+
 Every colour field (tint, text colour, outline colour, grime colour) has:
 - a **swatch** showing the current colour;
 - a **hex box**: type a six-digit hex code like `EEE4C4`;
