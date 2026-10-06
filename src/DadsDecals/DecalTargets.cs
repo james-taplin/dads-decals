@@ -1,15 +1,16 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace DadsDecals
 {
-    /// <summary>A renderer decals can be drawn onto: full-detail exterior mesh of a car.</summary>
+    /// <summary>A renderer decals can be drawn onto: an exterior mesh of a car, at any detail level.</summary>
     internal sealed class DecalTarget
     {
         public readonly MeshRenderer Renderer;
         public readonly Mesh Mesh;
+        /// <summary>Mesh-space bounds of the triangles actually drawn (see <see cref="DecalTargets.UsedBounds"/>).</summary>
+        public readonly Bounds LocalBounds;
 
         public readonly Transform Anchor;       // car root, or the bogie this renderer belongs to
 
@@ -17,14 +18,43 @@ namespace DadsDecals
         {
             Renderer = renderer;
             Mesh = mesh;
-
+            LocalBounds = DecalTargets.UsedBounds(mesh);
             Anchor = anchor;
         }
     }
 
     internal static class DecalTargets
     {
-        private static readonly Regex LowerLod = new Regex(@"lod[1-9]", RegexOptions.Compiled);
+        private static readonly Dictionary<Mesh, Bounds> usedBounds = new Dictionary<Mesh, Bounds>();
+
+        /// <summary>
+        /// Bounds of the vertices the mesh's triangles actually use. Usually the same as mesh.bounds,
+        /// but Locomotive Mesh Splitter's pieces keep the whole body's vertices and only some of its
+        /// triangles, so their mesh.bounds covers the whole loco. Computed once per mesh; meshes
+        /// that aren't CPU-readable fall back to mesh.bounds.
+        /// </summary>
+        public static Bounds UsedBounds(Mesh mesh)
+        {
+            if (usedBounds.TryGetValue(mesh, out var b)) return b;
+            b = mesh.bounds;
+            if (mesh.isReadable)
+            {
+                var verts = mesh.vertices;
+                var tris = mesh.triangles;
+                if (verts.Length > 0 && tris.Length > 0)
+                {
+                    Vector3 min = verts[tris[0]], max = min;
+                    foreach (var i in tris)
+                    {
+                        min = Vector3.Min(min, verts[i]);
+                        max = Vector3.Max(max, verts[i]);
+                    }
+                    b.SetMinMax(min, max);
+                }
+            }
+            usedBounds[mesh] = b;
+            return b;
+        }
 
         public static List<DecalTarget> Find(TrainCar car)
         {
@@ -77,13 +107,9 @@ namespace DadsDecals
         {
             var p = path.ToLowerInvariant();
             if (p.Contains("[interior") || p.Contains("broken") || p.Contains("[car plate") || p.Contains("textmeshpro")) return true;
-            if (LowerLod.IsMatch(p)) return true;
-            var group = r.GetComponentInParent<LODGroup>();
-            if (group != null)
-            {
-                var lods = group.GetLODs();
-                if (lods.Length > 0 && !lods[0].renderers.Contains(r) && lods.Skip(1).Any(l => l.renderers.Contains(r))) return true;
-            }
+            // Every detail level (LOD) is a target: the projection works on any mesh, and only the
+            // level being shown is visible, so decals stay on when a car switches to its low-detail
+            // model in the distance instead of popping off.
             // Particle-ish / glass-ish materials make poor decal targets.
             var shader = r.sharedMaterial != null && r.sharedMaterial.shader != null ? r.sharedMaterial.shader.name : "";
             if (shader.StartsWith("Particles/") || shader.StartsWith("Unlit/") || shader.Contains("Window") || shader.Contains("Smoke") || shader == "TransparencyWithFog") return true;

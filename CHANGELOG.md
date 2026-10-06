@@ -17,7 +17,18 @@ First step of multiplayer support for [Derail Valley Multiplayer](https://github
 ### Changed
 - Save format v3: every decal gets a stable ID and a "placed by" name. Older saves load fine and get new IDs.
 
-## [Unreleased] (planned 0.3.2)
+## [Unreleased]
+
+### Added
+- **Performance settings** in the Debug tab: *Decal detail* (High / Medium / Low) skips decals that are only a few pixels big on screen, and *Max draw distance* skips far-away ones. The selected decal and the placement preview are never skipped.
+- **Performance readout** in the Debug tab: decals drawn and skipped last frame, parts drawn, and Dad's Decals' CPU time per frame.
+
+### Changed
+- **Decals stay on at a distance.** They used to be drawn only on each car's full-detail model, so they could vanish when a car switched to its low-detail model far away. They now draw on whichever detail level is showing.
+- **Less work per frame.** Which parts each decal overlaps is now worked out once and remembered until the decal or the car changes, instead of being checked against every part every frame.
+- **Faster on split locos.** Parts are matched using the triangles they actually draw. Locomotive Mesh Splitter's S060 pieces each carry the whole body's vertices, so every decal used to be drawn on all ~50 pieces.
+
+## [0.3.1] - 2026-10-06 (pre-release)
 
 ### Added
 - **Layers.** Choose which decal shows on top where decals overlap: **To back**, **Backward**, **Forward** and **To front** in the Edit tab, with the selected decal's layer shown. New decals go on top, mirrored pairs move together, and undo restores the old order. The decal list now shows the top layer first.

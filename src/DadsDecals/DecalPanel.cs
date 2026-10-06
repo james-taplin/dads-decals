@@ -697,8 +697,27 @@ namespace DadsDecals
 
         // ---- Debug -------------------------------------------------------------------------
 
+        private static readonly string[] DetailNames = { "High", "Medium", "Low" };
+
         private void DrawDebugTab(TrainCar? car)
         {
+            if (Section("debug.perf", "Performance"))
+            {
+                var s = Main.Settings;
+                GUILayout.Label("Decal detail: skips decals that are only a few pixels big on screen (Medium: under 2 px, Low: under 6 px). High draws everything.");
+                var detail = GUILayout.Toolbar(s.DecalDetail, DetailNames);
+                GUILayout.Label(s.MaxDistance > 0 ? $"Max draw distance: {s.MaxDistance:0} m" : "Max draw distance: no limit");
+                var dist = Mathf.Round(GUILayout.HorizontalSlider(s.MaxDistance, 0f, 2000f) / 50f) * 50f;
+                if (detail != s.DecalDetail || !Mathf.Approximately(dist, s.MaxDistance))
+                {
+                    s.DecalDetail = detail;
+                    s.MaxDistance = dist;
+                    s.Save(Main.Mod);
+                }
+                GUILayout.Label($"Last frame: {RenderStats.LastDecals} decal(s) drawn on {RenderStats.LastDraws} part(s) across {RenderStats.LastCars} car(s), {RenderStats.LastCulled} skipped.");
+                GUILayout.Label($"Dad's Decals CPU time: {RenderStats.AverageMs:0.00} ms per frame (average).");
+            }
+
             GUILayout.Label("Aiming at: " + I.AimInfo);
             GUILayout.Label(I.MouseInfo);
             if (car != null && GUILayout.Button("Run diagnostics on " + car.ID)) lastReport = Diagnostics.Run(car);
