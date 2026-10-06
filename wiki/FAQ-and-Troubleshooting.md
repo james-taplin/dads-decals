@@ -9,6 +9,7 @@
 Open the **Debug** tab (or watch the **Aiming at:** line in the Place tab):
 - **"waiting: mouse is over the panel/toolbar"**: move the mouse off the window.
 - **"waiting: cursor hidden"**: free the cursor.
+- **"paused: panel closed or mouse not free"**: Dad's Decals pauses while the Decals window is off screen. Free the cursor and open the window.
 - **"not over a car"**: the mouse ray isn't hitting the car's collision shape. Try pointing at the middle of the body.
 - **Aiming at the car but "preview on 0 part(s)"**: try raising **Projection depth** (Size and placement section). Some custom locos have collision shapes that sit away from the visible body.
 
@@ -29,6 +30,12 @@ Decals attach to the car body or a bogie. Parts that animate inside a bogie (rod
 - **Was the loco regenerated?** Look under **Orphaned layouts** in the Layouts tab.
 - **Did you rename or remove the PNG?** Put it back with the same name and press **Reload folder**.
 - **Is "Link layout to paint" on?** The decals for another paint scheme are stored until that scheme is applied again.
+
+## There's a small white dot in the middle of my screen
+That's not Dad's Decals: it's the passenger-seat aim dot from the **DV People** mod. Turn off **Show Passenger Seat Hover Text** in its UMM settings (Ctrl+F10) to hide it.
+
+## The preview doesn't show on parts of the S060 (or other locos with mirrored parts)
+Fixed in 0.3.0. Locomotive Mesh Splitter mirrors the S060's body pieces, and older versions of Dad's Decals couldn't draw on mirrored parts.
 
 ## Do players or loco authors need anything special?
 No. It works on vanilla and custom (CCL) cars as they are.

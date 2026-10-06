@@ -2,7 +2,19 @@
 
 All notable changes to Dad's Decals. Versions follow [semantic versioning](https://semver.org/); dates are YYYY-MM-DD.
 
-## [0.2.0] - 2026-10-06 (first pre-release)
+## [0.3.0] - 2026-10-06 (first public pre-release)
+
+### Fixed
+- **Decals on mirrored parts.** No preview or decals appeared on locos with mirrored parts, such as the S060 with Locomotive Mesh Splitter, which mirrors its split body pieces. Decals now draw on both sides of a surface and rely on the facing check to skip the back.
+- **Paused while the window is away.** Placing and editing kept working in the world after the Decals window was closed or the mouse was locked, and the selected decal kept pulsing. Everything now pauses until the window is back on screen; your mode and selection are kept.
+- The installed `info.json` could report an old version number.
+
+### Docs
+- README and wiki now have screenshots of every tab: placing images and text, the placing preview, the settings sections, the colour picker, editing and layouts.
+- New showcase shots, including a fully decorated S060.
+- New FAQ entries: the "paused" aim message, the S060 fix, and the small white dot in the centre of the screen. That dot is the DV People mod's passenger-seat aim dot (turn off *Show Passenger Seat Hover Text* in its settings), not Dad's Decals.
+
+## [0.2.0] - 2026-10-06 (feature build, not published)
 
 ### Added
 - **Decal placement** on any loco, tender or wagon, vanilla or custom (CCL), with a live preview that follows the mouse. It aims through the camera you're looking through, so the exterior camera works.
@@ -26,5 +38,3 @@ All notable changes to Dad's Decals. Versions follow [semantic versioning](https
 - The decal box missed the paint on locos whose collision shapes sit away from the visible body.
 - Decals showed through shadows and drew on top of fog. They're now in the last opaque render slot.
 - The mod crashed while loading at the main menu.
-- No preview or decals on locos with mirrored parts, such as the S060 with Locomotive Mesh Splitter (it mirrors its split body pieces). Decals now draw on both sides of a surface and rely on the facing check instead.
-- Placing and editing kept working in the world after the Decals window was closed or the mouse was locked, and the selected decal kept pulsing. Everything now pauses until the window is back on screen.

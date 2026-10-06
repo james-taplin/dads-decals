@@ -50,9 +50,9 @@ We use **GPU projection**, the same technique Conformal Decals uses. Our shader 
 3. ✅ **Placement:** mouse raycast through `PlayerManager.ActiveCamera` (so the exterior camera works), ghost preview, click to place. Works on any car.
 4. ✅ **Conformal rendering:** confirmed in game on the CCL Big Boy and its tender (2026-10-05).
 5. ✅ **Persistence:** layouts saved in the save game, reapplied on spawn, orphans kept.
-6. 🔧 **v0.2: the feature set below (groups 1–4).** Built 2026-10-06, commit 78cf3ac. The shader and text rendering are checked offline; nothing has been tested in the game yet.
+6. ✅ **v0.2: the feature set below (groups 1–4).** Built 2026-10-06 and tested in game; published as the 0.3.0 pre-release with the mirrored-parts and pause fixes.
 7. **Later (group 5):** VR placement via CommsRadioAPI, distance culling for long trains.
-8. **v0.3: multiplayer sync** (planned, not started). See the section below.
+8. **v0.4: multiplayer sync** (planned, not started). See the section below.
 
 ## v0.2 feature plan (agreed 2026-10-06)
 
@@ -115,7 +115,7 @@ The panel gets tabs: **Place | Edit | Layouts | Debug**. Shared controls (size, 
 
 Each step is built, committed, and installed when the game is closed.
 
-## v0.3 plan: multiplayer sync (researched 2026-10-06, not started)
+## v0.4 plan: multiplayer sync (researched 2026-10-06, not started)
 Goal: everyone in a multiplayer session sees the same decals, and players **without** Dad's Decals can still join (they just don't see them).
 
 ### What we'd build on

@@ -4,7 +4,7 @@ A Derail Valley mod for putting decals on locomotives, tenders and wagons: road 
 
 ![A tender with a DVRT herald, road number, fluid labels and a DVRT logo, all placed with Dad's Decals](docs/images/showcase-tender-herald.webp)
 
-**Status: pre-release (v0.2.0).** It works well in testing, but expect rough edges. Please report problems on the [issue tracker](https://github.com/james-taplin/dads-decals/issues).
+**Status: pre-release (v0.3.0).** It works well in testing, but expect rough edges. Please report problems on the [issue tracker](https://github.com/james-taplin/dads-decals/issues).
 
 ## Features
 - **Works on any car**: vanilla and custom (CCL) locos, tenders and wagons. Loco authors don't need to do anything.
