@@ -115,7 +115,7 @@ The panel gets tabs: **Place | Edit | Layouts | Debug**. Shared controls (size, 
 
 Each step is built, committed, and installed when the game is closed.
 
-## v0.4 plan: multiplayer sync (researched and planned 2026-10-06, not started)
+## v0.4 plan: multiplayer sync (planned 2026-10-06; development on the `multiplayer` branch)
 Goal: everyone in a multiplayer session sees the same decals, and players **without** Dad's Decals can still join (they just don't see them).
 
 ### What we'd build on
@@ -234,15 +234,16 @@ Images go both ways: the host also asks a guest for any PNG the guest used that 
 - **Building:** compile against the `DVMultiplayerAPI` 1.1.0 NuGet package with runtime assets excluded (`ExcludeAssets="runtime"`), so the DLL doesn't end up in our zip.
 - **`info.json`:** `"MultiplayerCompatibility": "Client"` and `LoadAfter: ["DerailValleyModToolbar", "Multiplayer"]`.
 
-### Host settings (moderation), in the Layouts tab while hosting
+### Host settings (moderation), in the Layouts tab while hosting (decided 2026-10-06)
 - **Guests can:**
-  - view only;
-  - place and edit;
-  - place and edit, with the host approving. Pending edits appear in the host's panel with Accept/Reject.
+  - **view all**: everyone sees every decal, but only the host can place or edit;
+  - **free for all**: everyone can place and edit.
+  - No per-edit approval.
+- **Blacklist a player:** removes every decal they placed and stops them placing or editing for the rest of the session. The host can lift it. It's saved with the host's settings by username.
 - **Guests' own images:** allowed, or examples and the host's images only.
 - **Image cap:** downscale to 1024 px, and refuse anything over about 1 MB after re-encoding.
 - **Remove all decals by…** a chosen player (uses `PlacedBy`).
-- **Chat commands:** `/decals lock` (view only), `/decals unlock`, `/decals clear <player>`.
+- **Chat commands:** `/decals view` (view all), `/decals free` (free for all), `/decals blacklist <player>`, `/decals unblacklist <player>`.
 - **Every player:** a local "hide decals placed by…" list. It only affects your own screen.
 
 ### Milestones
@@ -271,10 +272,22 @@ Images go both ways: the host also asks a guest for any PNG the guest used that 
   - moderation lock and clear;
   - the host saves, quits and reloads, and everything guests placed is still there.
 
-### Open questions (multiplayer)
-- **Testing setup:** do you have a second PC or a friend to test with? Two instances on one PC may need two Steam accounts, which I haven't checked.
-- **Approval:** is "host approves each edit" worth the complexity, or are view-only and free-for-all enough for 0.4.0?
-- **Version mismatch:** should a client with an older Dad's Decals protocol be blocked from syncing (local-only), or should the host send a down-converted layout? The plan is local-only, with a message.
+### Older versions (decided 2026-10-06: pre-0.4 is unsupported, say so politely)
+- **How Multiplayer checks mods:** at login, `ValidateClientMods` compares mod **names only, not versions** (`NetworkServer.cs`, around line 1207). Pre-0.4 Dad's Decals has no compatibility key, so it counts as required. 0.4 marks itself `Client`, so it drops out of the list.
+- **Pre-0.4 player joining a 0.4+ host:**
+  - Left alone, Multiplayer would refuse them with its generic "mod mismatch" message.
+  - Instead, the host patches `ModCompatibilityManager.ValidateClientMods` with a Harmony prefix. The prefix removes `DadsDecals` from the client's list when its version is below 0.4 and notes the version, so they can join.
+  - When that player is ready and hasn't sent `Hello` within 10 s, the host whispers to them: *"Hi {name}! You're running Dad's Decals {version}, and versions before 0.4 aren't supported in multiplayer, so you won't see decals on this server. Updating to 0.4 or newer will fix that. Sorry for the hassle!"*
+  - If the patch target ever changes, the prefix fails safe: Multiplayer's own message shows as before.
+- **0.4+ player joining a pre-0.4 host:** the old host requires Dad's Decals, and Multiplayer refuses the join. The 0.4 client can't change that. The wiki says hosts need 0.4 or newer, and the client logs a hint.
+- **Future protocol mismatch (0.4 vs 0.5…):** `Welcome` carries the protocol version. A client that can't speak it goes local-only, and its panel shows: *"This server's Dad's Decals ({version}) uses a different multiplayer version from yours. Decals you place stay on your screen only. Matching versions will fix that."*
+
+### Testing (decided 2026-10-06)
+- No second PC. The user's friend plays online and may test with her group.
+- So:
+  - single-player checks happen here;
+  - multiplayer builds go to the testers as tagged `0.4.0-alpha.N` pre-releases from this branch;
+  - each comes with a short checklist and a Debug-tab "multiplayer log", so testers can send back one file.
 
 ## Open questions
 - Does the game's exterior camera also zoom on the mouse wheel? If so, Ctrl/Shift+wheel may need different modifiers.
