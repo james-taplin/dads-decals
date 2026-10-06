@@ -4,6 +4,8 @@ Dad's Decals lets you put decals on any Derail Valley loco, tender or wagon: num
 
 ![A tender decorated with Dad's Decals](../docs/images/showcase-tender-herald.webp)
 
+![An S060 tank engine covered in stickers, stripes, cats and placards](../docs/images/showcase-s060-side.webp)
+
 ## Pages
 | Page | What's in it |
 |---|---|

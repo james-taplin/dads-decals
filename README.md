@@ -23,6 +23,14 @@ A Derail Valley mod for putting decals on locomotives, tenders and wagons: road 
 |---|---|
 | ![Two-line DVRT lettering, chipped road number and fluid labels on a tender](docs/images/showcase-tender-lettering.webp) | ![Road number, stencil text, hazard stripe and a rotated chipped slogan on a tender](docs/images/showcase-tender-rekt.png) |
 
+Or go completely overboard:
+
+![An S060 tank engine covered in stickers, stripes, cats and placards](docs/images/showcase-s060-side.webp)
+
+| | |
+|---|---|
+| ![The S060 from the front, with a glowing smiley face on the smokebox door](docs/images/showcase-s060-front.webp) | ![The back of the S060's cab covered in cat stickers and a caution placard](docs/images/showcase-s060-rear.webp) |
+
 ## Requirements
 - [Unity Mod Manager](https://www.nexusmods.com/site/mods/21)
 - [Mod Toolbar](https://github.com/imagitama/derail-valley-mod-toolbar) (the Decals window lives in it)

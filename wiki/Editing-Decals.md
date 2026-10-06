@@ -9,6 +9,7 @@ Open the **Edit** tab to work on decals you've already placed.
 - Or click it in the **Decals on this car** list. Mirrored pairs are marked *(mirrored pair)*.
 - The selected decal **pulses blue** on the car. Its mirrored twin pulses too.
 - **Right-click** in the world to deselect.
+- Editing pauses while the Decals window is closed or the mouse is locked: the selected decal stops pulsing and clicks, keys and the mouse wheel do nothing. It's still selected when you open the window again.
 
 ## Moving and adjusting
 | Input | Does |

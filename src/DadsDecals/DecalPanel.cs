@@ -44,8 +44,12 @@ namespace DadsDecals
             }
         }
 
+        /// <summary>Frame the panel was last drawn; Interaction pauses when it stops being drawn.</summary>
+        public static int LastDrawFrame = -100;
+
         public void Draw(Rect rect)
         {
+            LastDrawFrame = Time.frameCount;
             swatchStyle ??= new GUIStyle(GUI.skin.box) { normal = { background = Texture2D.whiteTexture } };
             selectedStyle ??= new GUIStyle(GUI.skin.button) { fontStyle = FontStyle.Bold };
             sectionStyle ??= new GUIStyle(GUI.skin.button) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };

@@ -23,6 +23,8 @@ Section headers with ▼/► (palette categories, *Size and placement*, *Colour*
 4. **Left-click** to place it. You stay in placing mode, so you can keep clicking to place more copies.
 5. **Right-click**, click the image again, or press **Stop placing** to finish.
 
+Placing pauses whenever the Decals window isn't on screen: when you lock the mouse to look around, or close the window from the toolbar. The preview disappears and clicks do nothing in the world. Open the window again and you carry on where you left off.
+
 While placing, the panel shows an **Aiming at:** line and how many parts the preview is drawn on. It's mainly useful if the preview doesn't appear (see [FAQ](FAQ-and-Troubleshooting.md)).
 
 ![Placing mode: the Aiming at line in the panel and the live preview on the tender](../docs/images/gui-placing-preview.png)

@@ -36,6 +36,14 @@ namespace DadsDecals
         public string MouseInfo { get; private set; } = "";
         public bool Picking => pickCallback != null;
 
+        /// <summary>
+        /// True while our panel is on screen. The Toolbar only draws it while the screen-space mouse is
+        /// on and the panel is open, so this covers both "mouse not free" and "panel closed". While
+        /// false, everything in the world pauses (no preview, clicks, keys or selection pulse); the
+        /// mode and selection are kept, so reopening the panel carries on where you left off.
+        /// </summary>
+        public bool Active { get; private set; }
+
         // Collision shapes can sit off the visible body, so the box starts this far outside the
         // point we hit and runs inward from there.
         private const float SurfaceMargin = 0.25f;
@@ -119,6 +127,18 @@ namespace DadsDecals
             var overUi = MouseOverUi();
             MouseInfo = $"mouse {Input.mousePosition.x:0},{Input.mousePosition.y:0} of {Screen.width}x{Screen.height}, " +
                         $"cursor visible={Cursor.visible} lock={Cursor.lockState}, over UI={overUi}, camera={(cam != null ? cam.name : "none")}";
+
+            // OnGUI runs after Update, so the panel's last draw is from the previous frame.
+            Active = Time.frameCount - DecalPanel.LastDrawFrame <= 2;
+            if (!Active)
+            {
+                if (ghostValid) ClearGhost();
+                dragging = false;
+                mouseDownOnSelected = false;
+                pickCallback = null;
+                if (Mode != ToolMode.None) AimInfo = "paused: panel closed or mouse not free";
+                return;
+            }
 
             if (Mode == ToolMode.None && pickCallback == null) return;
             if (cam == null || !Cursor.visible)

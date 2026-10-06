@@ -82,7 +82,8 @@ namespace DadsDecals
             viewCamera = PlayerManager.ActiveCamera != null ? PlayerManager.ActiveCamera : PlayerManager.PlayerCamera;
             if (viewCamera == null) return;
             var layout = Main.Layouts.Get(car.CarGUID);
-            var selected = Interaction.Instance != null ? Interaction.Instance.Selected : null;
+            // No selection pulse while the panel is closed or the mouse isn't free.
+            var selected = Interaction.Instance != null && Interaction.Instance.Active ? Interaction.Instance.Selected : null;
             if (layout != null)
                 foreach (var d in layout.Decals)
                     Draw(d, d == selected || (selected != null && d.PairId.Length > 0 && d.PairId == selected.PairId));
