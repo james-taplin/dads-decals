@@ -115,7 +115,7 @@ The panel gets tabs: **Place | Edit | Layouts | Debug**. Shared controls (size, 
 
 Each step is built, committed, and installed when the game is closed.
 
-## v0.4 plan: multiplayer sync (researched 2026-10-06, not started)
+## v0.4 plan: multiplayer sync (researched and planned 2026-10-06, not started)
 Goal: everyone in a multiplayer session sees the same decals, and players **without** Dad's Decals can still join (they just don't see them).
 
 ### What we'd build on
@@ -132,7 +132,7 @@ Target the maintained **[AMacro/dv-multiplayer](https://github.com/AMacro/dv-mul
 - **Mod checking:** `ModCompatibilityManager.GetLocalMods()` only lists mods marked `Undefined`/`All`/`Incompatible`. A mod with **no** marking counts as required, so today a host running Dad's Decals forces every client to have it.
   - The fix is one line in our `info.json`: `"MultiplayerCompatibility": "Client"`. Multiplayer reads this key from every mod's info.json at startup (`ModCompatibilityManager.cs` `ReadModJsons`).
   - "Client" means "no effect on gameplay", which is true for decals. Players with or without it can then join either way round.
-  - **Worth shipping in a 0.2.x patch even before sync exists.**
+  - **Worth shipping in a 0.3.x patch even before sync exists.**
 - **Sending to someone without the mod:**
   - Every message carries a type hash. A client that never registered our packet type throws LiteNetLib's `ParseException("Undefined packet in NetDataReader")` (`NetPacketProcessor.GetCallbackFromData`, LiteNetLib 1.3.1).
   - Multiplayer catches that and only logs a warning (`NetworkManager.cs:166`). Each send is one packet per message (`WriteNetSerializablePacket` resets the writer), so no other data is lost.
@@ -163,18 +163,118 @@ Target the maintained **[AMacro/dv-multiplayer](https://github.com/AMacro/dv-mul
   - Keep every `MPAPI` reference in one `MultiplayerSync` class. Only touch it when `UnityModManager.FindMod("Multiplayer")` is enabled, so single player never loads the assembly.
   - Use `LoadAfter: ["Multiplayer"]` (not `Requirements`).
 
-### Build order
-1. `info.json` compatibility key (0.2.x patch).
-2. `MultiplayerSync` isolation + hello handshake + snapshot on join (text decals and example images only).
-3. Image hashing, request and chunked transfer, plus the cache folder.
-4. Client edits through the host, versions, and live broadcast.
-5. Host moderation settings + placer names.
-6. Panel: connection status, local-only notice, per-player hide.
+### Answers from the Multiplayer source (checked 2026-10-06, commit `1a5aeae`)
+- **Clients get the normal car events.**
+  - Cars sent by the host are spawned through `NetworkedCarSpawner.SpawnCar`, which calls `CarSpawner.Instance.FireCarSpawned` (`NetworkedCarSpawner.cs:150`).
+  - Deletes from the host go through `CarSpawner.Instance.DeleteCar` (`NetworkClient.cs`, `OnClientboundDestroyTrainCarPacket`).
+  - So our existing `CarSpawned` / `CarAboutToBeDeleted` hooks work on clients unchanged.
+  - On clients, a deleted car must **not** become an orphaned layout. Only the host keeps orphans.
+- **Cars arrive before "ready", but our packets can overtake them.**
+  - Trainsets go out `ReliableOrdered` while the player is loading.
+  - `OnPlayerReady` fires at the very end of the join, after the loading screen is removed (`NetworkServer.cs:1474`).
+  - Mod packets use `ReliableUnordered`, though, so a layout can arrive before its car exists.
+  - That's fine: received layouts go straight into the layout store keyed by GUID, and the existing `CarSpawned` hook draws them when the car turns up.
+- **The host is also a client.** It talks to itself through `SelfPeer`. Host broadcasts use `excludeSelf: true`, and the host applies its own edits directly instead of via packets.
+- **Dedicated servers don't exist yet.** `IsDedicatedServer` is hard-coded to `false` (`API/APIProvider.cs:27`). Keep sync logic free of rendering code anyway.
+- **Players have names.** `IPlayer.Username`, `DisplayName` and `PlayerId` are available for "placed by" and for moderation.
+- **Chat commands are available.** `IServer.RegisterChatCommand(long, short, help, callback)` lets the host moderate from chat.
+- **Paint themes are already synced** (`CommonPaintThemePacket`), so `OnThemeChanged` fires on every machine.
+- **Steam transport:**
+  - It maps every reliable delivery method to Steam's reliable send (`SteamworksTransport.cs:405`).
+  - Steam's documented limit is 512 KB per message, so our ~32 KB image chunks are well under it. (This comes from Steam's docs, not from this source.)
+
+### Data format v3
+- `DecalPlacement` gains:
+  - `Id` (a GUID string), so edits, attribution and moderation can name a single decal;
+  - `PlacedBy`: the player's username, empty in single player;
+  - `ImageHash`: the SHA-1 of the PNG bytes, filled in when a layout is sent over the network.
+- `LocoLayout` gains `Version`, an int the host bumps on every accepted change.
+- v2 saves load with new `Id`s generated and an empty `PlacedBy`.
+
+### Messages (all `ISerializablePacket`; layouts travel as JSON)
+| Message | Direction | Contents |
+|---|---|---|
+| `Hello` | client → host | mod version, protocol version |
+| `Welcome` | host → client | protocol version, plus the host settings the client must respect (guest permission, own images allowed, size cap) |
+| `CarLayout` | host → client(s) | car GUID, version, layout JSON (with image keys and hashes) |
+| `CarLayoutEdit` | client → host | car GUID, base version, layout JSON |
+| `EditRejected` | host → client | car GUID, reason, current version (followed by a `CarLayout`) |
+| `ImageRequest` | either way | list of SHA-1s needed |
+| `ImageChunk` | either way | SHA-1, chunk index, chunk count, bytes (≤ 32 KB) |
+
+Images go both ways: the host also asks a guest for any PNG the guest used that the host doesn't have yet.
+
+### How it flows
+1. **Join.**
+   - The client sends `Hello`.
+   - If no `Welcome` arrives within about 10 s, the client switches to local-only mode. Either the host has no Dad's Decals, or its version is incompatible.
+2. **Snapshot.**
+   - On `Hello`, the host sends one `CarLayout` for each car that has decals.
+   - The client requests any image hashes it doesn't have and caches them as `Decals/_Multiplayer/<sha1>.png`.
+3. **Edits.**
+   - When a client's gesture ends (the same points where undo records), it applies the change locally and sends `CarLayoutEdit`.
+   - The host checks the permission and the base version.
+   - **Accepted:** the host bumps the version, stamps `PlacedBy` on new decal `Id`s, sends `CarLayout` to everyone else, and sends the sender a version acknowledgement.
+   - **Rejected** (no permission, too big, or someone else changed the car first): the host sends `EditRejected` plus the current `CarLayout`, and the client's panel says why.
+4. **Host edits** apply directly and are broadcast as `CarLayout`.
+5. **Paint-linked layouts:** only the host runs the paint-theme swap and broadcasts the result, so the machines can't drift apart.
+6. **Saving:** unchanged. Only the host saves, and it saves the merged layouts.
+
+### Code structure
+- **`Multiplayer/MultiplayerBridge.cs`:** the only file that references `MPAPI` types. It registers the packets and owns the set of players who said hello, plus the image transfer.
+- **Calling it safely from `Main`:**
+  - `Main` calls the bridge only when `UnityModManager.FindMod("Multiplayer")` is loaded and enabled.
+  - The call site is a `[MethodImpl(MethodImplOptions.NoInlining)]` method, so single player never loads `MultiplayerAPI.dll`.
+  - It subscribes to `ServerStarted` / `ClientStarted` in the first `LateUpdate` after load, the way Multiplayer's own API test mod does.
+- **`Sync.cs`** (no `MPAPI` types):
+  - holds the role: `Offline`, `Host`, `Client` or `LocalOnly`;
+  - tracks versions;
+  - provides the hooks Interaction and Layouts call when a gesture ends.
+  - In `Offline`, everything is a no-op, so single player behaves exactly as now.
+- **Building:** compile against the `DVMultiplayerAPI` 1.1.0 NuGet package with runtime assets excluded (`ExcludeAssets="runtime"`), so the DLL doesn't end up in our zip.
+- **`info.json`:** `"MultiplayerCompatibility": "Client"` and `LoadAfter: ["DerailValleyModToolbar", "Multiplayer"]`.
+
+### Host settings (moderation), in the Layouts tab while hosting
+- **Guests can:**
+  - view only;
+  - place and edit;
+  - place and edit, with the host approving. Pending edits appear in the host's panel with Accept/Reject.
+- **Guests' own images:** allowed, or examples and the host's images only.
+- **Image cap:** downscale to 1024 px, and refuse anything over about 1 MB after re-encoding.
+- **Remove all decals by…** a chosen player (uses `PlacedBy`).
+- **Chat commands:** `/decals lock` (view only), `/decals unlock`, `/decals clear <player>`.
+- **Every player:** a local "hide decals placed by…" list. It only affects your own screen.
+
+### Milestones
+1. **0.3.1:** the `info.json` compatibility key only. Players with and without Dad's Decals can join each other; decals stay local.
+2. **0.4.0-alpha.1:**
+   - bridge isolation;
+   - data format v3;
+   - `Hello`/`Welcome`;
+   - host snapshot for text decals and the shipped example images (no image transfer yet).
+3. **0.4.0-alpha.2:** image hashing, request/chunk transfer, and the cache folder.
+4. **0.4.0-alpha.3:** client edits through the host, versions, and rejection handling.
+5. **0.4.0-beta:** moderation settings, chat commands, placed-by, and per-player hide.
+6. **0.4.0:**
+   - a panel status line: Offline / Hosting (n players with Dad's Decals) / Connected / Local only;
+   - a wiki page.
+
+### Test plan
+- **Single player first, at every milestone:** nothing changes, and `MultiplayerAPI.dll` isn't loaded when Multiplayer isn't installed.
+- **Two game instances** (two PCs, or two Steam accounts), on both the LiteNetLib (direct IP) and Steam transports:
+  - a client with Dad's Decals joining a host without it, and the other way round: both join with no errors;
+  - joining with 20+ decorated cars;
+  - a late join;
+  - the host deleting a car while a client is editing it;
+  - two players editing the same car at once: the second edit is rejected, and both end up identical;
+  - a large PNG refused with a message;
+  - moderation lock and clear;
+  - the host saves, quits and reloads, and everything guests placed is still there.
 
 ### Open questions (multiplayer)
-- Testing needs two game instances: two PCs, or a second Steam account on another machine. Is the Steam transport any different from LiteNetLib for big chunked sends? The code path is the same packet processor, but this hasn't been checked in practice.
-- Does `OnPlayerReady` fire after the client's cars have spawned? If not, the client must hold incoming layouts until the car's `CarSpawned` event fires (we already have that hook).
-- Dedicated servers (`IsDedicatedServer`) have no player camera. Sync logic must not depend on rendering code there.
+- **Testing setup:** do you have a second PC or a friend to test with? Two instances on one PC may need two Steam accounts, which I haven't checked.
+- **Approval:** is "host approves each edit" worth the complexity, or are view-only and free-for-all enough for 0.4.0?
+- **Version mismatch:** should a client with an older Dad's Decals protocol be blocked from syncing (local-only), or should the host send a down-converted layout? The plan is local-only, with a message.
 
 ## Open questions
 - Does the game's exterior camera also zoom on the mouse wheel? If so, Ctrl/Shift+wheel may need different modifiers.
