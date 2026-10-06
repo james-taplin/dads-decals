@@ -35,6 +35,7 @@ namespace DadsDecals
         private MaterialPropertyBlock mpb = null!;
         private readonly Vector3[] corners = new Vector3[8];
         private TrainCarPaint? paint;
+        private Camera? viewCamera;
 
         /// <summary>Set by Interaction while the player is positioning a new decal on this car.</summary>
         public DecalPlacement? Ghost;
@@ -75,6 +76,11 @@ namespace DadsDecals
         private void LateUpdate()
         {
             if (Assets.DecalShader == null || car.logicCar == null) return;
+            // Only the camera the player looks through. camera: null in DrawMesh means *every* camera,
+            // which put decals into DV's other cameras (UI/render-texture/probe cameras) - seen as a
+            // stray white dot drawn over the screen and even the menus.
+            viewCamera = PlayerManager.ActiveCamera != null ? PlayerManager.ActiveCamera : PlayerManager.PlayerCamera;
+            if (viewCamera == null) return;
             var layout = Main.Layouts.Get(car.CarGUID);
             var selected = Interaction.Instance != null ? Interaction.Instance.Selected : null;
             if (layout != null)
@@ -130,7 +136,7 @@ namespace DadsDecals
                 if (!r.bounds.Intersects(bounds)) continue;
                 var m = r.localToWorldMatrix;
                 for (var sub = 0; sub < t.Mesh.subMeshCount; sub++)
-                    Graphics.DrawMesh(t.Mesh, m, material, r.gameObject.layer, null, sub, mpb, ShadowCastingMode.Off, true);
+                    Graphics.DrawMesh(t.Mesh, m, material, r.gameObject.layer, viewCamera, sub, mpb, ShadowCastingMode.Off, true);
                 draws++;
             }
             return draws;
