@@ -5,3 +5,4 @@ obj/
 *.suo
 build/
 *.zip
+dist/
