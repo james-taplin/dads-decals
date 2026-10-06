@@ -63,6 +63,7 @@ namespace DadsDecals
             harmony?.UnpatchAll(modEntry.Info.Id);
             if (Interaction.Instance != null) UnityEngine.Object.Destroy(Interaction.Instance.gameObject);
             TextDecals.ClearCache();
+            Layers.Clear();
             foreach (var r in UnityEngine.Object.FindObjectsOfType<DecalRenderer>()) UnityEngine.Object.Destroy(r);
             Library?.Dispose();
             Assets.Unload();

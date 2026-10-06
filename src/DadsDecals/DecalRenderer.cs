@@ -32,6 +32,7 @@ namespace DadsDecals
 
         private TrainCar car = null!;
         private List<DecalTarget> targets = new List<DecalTarget>();
+        private readonly Dictionary<DecalPlacement, int> queues = new Dictionary<DecalPlacement, int>();
         private MaterialPropertyBlock mpb = null!;
         private readonly Vector3[] corners = new Vector3[8];
         private TrainCarPaint? paint;
@@ -85,10 +86,13 @@ namespace DadsDecals
             // No selection pulse while the panel is closed or the mouse isn't free.
             var selected = Interaction.Instance != null && Interaction.Instance.Active ? Interaction.Instance.Selected : null;
             if (layout != null)
+            {
+                Layers.Assign(layout.Decals, queues);
                 foreach (var d in layout.Decals)
-                    Draw(d, d == selected || (selected != null && d.PairId.Length > 0 && d.PairId == selected.PairId));
-            GhostDraws = Ghost != null ? Draw(Ghost, false) : 0;
-            if (GhostTwin != null) Draw(GhostTwin, false);
+                    Draw(d, d == selected || (selected != null && d.PairId.Length > 0 && d.PairId == selected.PairId), queues[d]);
+            }
+            GhostDraws = Ghost != null ? Draw(Ghost, false, Layers.GhostQueue) : 0;
+            if (GhostTwin != null) Draw(GhostTwin, false, Layers.GhostQueue);
         }
 
         /// <summary>World matrix of the decal box (unit cube -> world), including roll and mirroring.</summary>
@@ -102,10 +106,11 @@ namespace DadsDecals
 
         public Matrix4x4 DecalToWorld(DecalPlacement d) => DecalToWorld(DecalTargets.ResolveAnchor(car, d.Anchor), d);
 
-        private int Draw(DecalPlacement d, bool highlight)
+        private int Draw(DecalPlacement d, bool highlight, int queue)
         {
-            var material = Assets.MaterialFor(d, car, out _);
-            if (material == null) return 0;
+            var baseMaterial = Assets.MaterialFor(d, car, out _);
+            if (baseMaterial == null) return 0;
+            var material = Layers.AtQueue(baseMaterial, queue);
 
             var anchor = DecalTargets.ResolveAnchor(car, d.Anchor);
             var toWorld = DecalToWorld(anchor, d);

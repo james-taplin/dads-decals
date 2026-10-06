@@ -16,6 +16,12 @@ Open the **Debug** tab (or watch the **Aiming at:** line in the Place tab):
 ## A decal doesn't reach the surface, or appears on the inside
 Adjust **Projection depth**: higher reaches further into the bodywork. If a decal shows through to an inner surface, lower it, or reduce the **Wrap angle**.
 
+## Parts of letters are cut off
+Fixed in 0.3.2. Older versions cut off descenders (g, j, p, q, y) and the flourishes of script fonts, both in the panel preview and on the car. Text is now cropped to the actual ink, so every font fits. Existing text decals are redrawn automatically; they may come out a touch bigger or smaller than before.
+
+## Overlapping decals swap places as I move the camera
+Fixed in 0.3.2 with layers: see [Editing decals](Editing-Decals.md#layers-which-decal-is-on-top).
+
 ## Text looks blurry
 Text resolution follows the decal's size. If small text looks soft up close, make the decal a bit larger, or use a bolder font.
 

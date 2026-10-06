@@ -2,6 +2,15 @@
 
 All notable changes to Dad's Decals. Versions follow [semantic versioning](https://semver.org/); dates are YYYY-MM-DD.
 
+## [Unreleased] (planned 0.3.2)
+
+### Added
+- **Layers.** Choose which decal shows on top where decals overlap: **To back**, **Backward**, **Forward** and **To front** in the Edit tab, with the selected decal's layer shown. New decals go on top, mirrored pairs move together, and undo restores the old order. The decal list now shows the top layer first.
+
+### Fixed
+- **Overlapping decals swapped places** depending on the camera angle, because they all shared one render slot and the game sorted them by distance. Each layer now draws in its own slot (up to 49 per car), and every slot still gets shadows and fog.
+- **Text was clipped**: descenders (g, j, q…) and script-font flourishes were cut off, in the panel preview and on the car. The text image was sized from Unity's reported text bounds, which sit too high and miss overhangs. Text now renders on a generous canvas and is cropped to the actual ink.
+
 ## [0.3.0] - 2026-10-06 (pre-release)
 
 ### Fixed

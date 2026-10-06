@@ -419,6 +419,13 @@ namespace DadsDecals
 
         // ---- Edit --------------------------------------------------------------------------
 
+        // The buttons are disabled when the move would do nothing, so every click is a real change.
+        private static void Restack(LocoLayout layout, DecalPlacement sel, Layers.Move move)
+        {
+            Undo.Record(layout);
+            Layers.Apply(layout.Decals, sel, move);
+        }
+
         private void DrawEditTab(TrainCar? car, LocoLayout? layout)
         {
             if (I.Mode != ToolMode.Edit) I.StartEditing();
@@ -448,9 +455,10 @@ namespace DadsDecals
             }
             GUILayout.EndHorizontal();
 
-            if (Section("edit.list", $"Decals on this car ({layout.Decals.Count})"))
+            if (Section("edit.list", $"Decals on this car ({layout.Decals.Count}), top layer first"))
             {
-                for (var i = 0; i < layout.Decals.Count; i++)
+                // Bottom-first list order is the stacking order; show it top-first like a layer list.
+                for (var i = layout.Decals.Count - 1; i >= 0; i--)
                 {
                     var d = layout.Decals[i];
                     var label = $"{i + 1}. {d.DisplayName}{(d.PairId.Length > 0 ? "  (mirrored pair)" : "")}";
@@ -507,6 +515,19 @@ namespace DadsDecals
                 GUILayout.EndHorizontal();
                 return;
             }
+            GUILayout.EndHorizontal();
+
+            // Stacking order: which decal shows on top where decals overlap.
+            var (layer, layers) = Layers.Position(layout.Decals, sel);
+            GUILayout.BeginHorizontal();
+            GUILayout.Label($"Layer {layer} of {layers}", GUILayout.Width(110));
+            GUI.enabled = layer > 1;
+            if (GUILayout.Button("To back")) Restack(layout, sel, Layers.Move.ToBack);
+            if (GUILayout.Button("Backward")) Restack(layout, sel, Layers.Move.Backward);
+            GUI.enabled = layer < layers;
+            if (GUILayout.Button("Forward")) Restack(layout, sel, Layers.Move.Forward);
+            if (GUILayout.Button("To front")) Restack(layout, sel, Layers.Move.ToFront);
+            GUI.enabled = true;
             GUILayout.EndHorizontal();
 
             if (sel.Kind == DecalKind.Text && sel.Text != null)

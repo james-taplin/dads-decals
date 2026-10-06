@@ -85,6 +85,28 @@ public static class ShaderTestRender
             else mpb.SetVector(parts[0].Trim(), new Vector4(nums[0], nums[1], nums[2], nums.Length > 3 ? nums[3] : 1));
         }
 
+        // DADSDECALS_TEST_LAYERS="qa,qb": a second, overlapping decal (hazard stripe) for layering.
+        // The herald draws at queue qa, the stripe at qb, and the stripe is submitted FIRST, so the
+        // result shows queue order winning over submission order.
+        Material stripeMat = null;
+        MaterialPropertyBlock stripeMpb = null;
+        var layers = System.Environment.GetEnvironmentVariable("DADSDECALS_TEST_LAYERS");
+        if (!string.IsNullOrEmpty(layers))
+        {
+            var q = layers.Split(',');
+            decalMat.renderQueue = int.Parse(q[0]);
+            var stripeTex = new Texture2D(2, 2);
+            stripeTex.LoadImage(File.ReadAllBytes("../../examples/Decals/Warning Stripes/Stripes yellow-black.png"));
+            stripeTex.wrapMode = TextureWrapMode.Clamp;
+            stripeMat = new Material(shader) { mainTexture = stripeTex, renderQueue = int.Parse(q[1]) };
+            var stripeToWorld = Matrix4x4.TRS(new Vector3(0.5f, 1.6f, -0.8f), Quaternion.identity, new Vector3(1.6f, 0.4f, 0.6f));
+            stripeMpb = new MaterialPropertyBlock();
+            stripeMpb.SetMatrix("_WorldToDecal", stripeToWorld.inverse);
+            stripeMpb.SetVector("_DecalForward", stripeToWorld.MultiplyVector(Vector3.forward).normalized);
+            stripeMpb.SetFloat("_WrapCos", Mathf.Cos(75 * Mathf.Deg2Rad));
+            stripeMpb.SetVector("_DecalSize", new Vector4(1.6f, 0.4f, 0, 0));
+        }
+
         var cam = new GameObject("Cam").AddComponent<Camera>();
         cam.transform.SetParent(root.transform);
         cam.transform.position = new Vector3(1.5f, 2.2f, -7f);
@@ -107,6 +129,9 @@ public static class ShaderTestRender
             cam.targetTexture = rt;
             // Same approach as the mod: Graphics.DrawMesh of each target's mesh with the decal
             // material, into this camera only (queued draws are used by its next render).
+            if (stripeMat != null)
+                Graphics.DrawMesh(boiler.GetComponent<MeshFilter>().sharedMesh, boiler.transform.localToWorldMatrix,
+                    stripeMat, 0, cam, 0, stripeMpb, UnityEngine.Rendering.ShadowCastingMode.Off, true);
             foreach (var target in new[] { boiler, cab })
                 Graphics.DrawMesh(target.GetComponent<MeshFilter>().sharedMesh, target.transform.localToWorldMatrix,
                     decalMat, 0, cam, 0, mpb, UnityEngine.Rendering.ShadowCastingMode.Off, true);

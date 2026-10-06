@@ -198,17 +198,72 @@ namespace DadsDecals
                     }
                 }
 
-                var pad = outline + lineHeight * 0.05f;
-                var worldW = bounds.size.x + pad * 2;
-                var worldH = bounds.size.y + pad * 2;
-                var scale = Mathf.Min(pxPerLine / lineHeight, MaxPixels / worldW, MaxPixels / worldH);
-                var w = Mathf.Max(8, Mathf.RoundToInt(worldW * scale));
-                var h = Mathf.Max(8, Mathf.RoundToInt(worldH * scale));
+                // The renderer's bounds don't match where the glyphs are actually drawn: they sit too
+                // high and miss swashes and overhangs, which clipped descenders and script fonts. So
+                // render a generous canvas around them and crop to the real ink. If the ink still
+                // touches the canvas edge, try once more with twice the margin.
+                Color32[]? canvas = null;
+                int w = 0, h = 0;
+                var scale = 0f;
+                for (var attempt = 0; attempt < 2; attempt++)
+                {
+                    var marginX = outline + lineHeight * (attempt == 0 ? 0.5f : 1.0f);
+                    var marginY = outline + lineHeight * (attempt == 0 ? 0.75f : 1.5f);
+                    var worldW = bounds.size.x + marginX * 2;
+                    var worldH = bounds.size.y + marginY * 2;
+                    scale = Mathf.Min(pxPerLine / lineHeight, MaxPixels / worldW, MaxPixels / worldH);
+                    w = Mathf.Max(8, Mathf.RoundToInt(worldW * scale));
+                    h = Mathf.Max(8, Mathf.RoundToInt(worldH * scale));
+                    canvas = RenderCanvas(root.transform, bounds.center, worldH, w, h);
+                    if (!InkTouchesEdge(canvas, w, h)) break;
+                }
 
-                var rt = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
-                var camGo = new GameObject("cam");
-                camGo.transform.SetParent(root.transform, false);
-                camGo.transform.position = bounds.center - Vector3.forward * 10;
+                if (!FindInk(canvas!, w, h, out var x0, out var y0, out var x1, out var y1)) return null;
+                var pad = Mathf.Max(2, Mathf.RoundToInt(lineHeight * scale * 0.04f));
+                x0 = Mathf.Max(0, x0 - pad); y0 = Mathf.Max(0, y0 - pad);
+                x1 = Mathf.Min(w - 1, x1 + pad); y1 = Mathf.Min(h - 1, y1 + pad);
+                var cw = x1 - x0 + 1;
+                var ch = y1 - y0 + 1;
+
+                // Crop, and un-premultiply: the blend leaves colour premultiplied by coverage, and
+                // decals expect straight alpha.
+                var px = new Color32[cw * ch];
+                for (var y = 0; y < ch; y++)
+                for (var x = 0; x < cw; x++)
+                {
+                    var c = canvas![(y0 + y) * w + x0 + x];
+                    var a = c.a;
+                    if (a != 0 && a != 255)
+                    {
+                        c.r = (byte)Mathf.Min(255, c.r * 255 / a);
+                        c.g = (byte)Mathf.Min(255, c.g * 255 / a);
+                        c.b = (byte)Mathf.Min(255, c.b * 255 / a);
+                    }
+                    px[y * cw + x] = c;
+                }
+                var tex = new Texture2D(cw, ch, TextureFormat.RGBA32, mipChain: true);
+                tex.SetPixels32(px);
+                tex.name = "DadsDecal text " + text;
+                tex.wrapMode = TextureWrapMode.Clamp;
+                tex.anisoLevel = 4;
+                tex.Apply(updateMipmaps: true, makeNoLongerReadable: true);
+                return new Entry { Texture = tex, Aspect = (float)cw / ch };
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        /// <summary>Renders the studio (text on layer 31) to a w x h canvas centred on <paramref name="centre"/>.</summary>
+        private static Color32[] RenderCanvas(Transform root, Vector3 centre, float worldH, int w, int h)
+        {
+            var rt = RenderTexture.GetTemporary(w, h, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+            var camGo = new GameObject("cam");
+            try
+            {
+                camGo.transform.SetParent(root, false);
+                camGo.transform.position = centre - Vector3.forward * 10;
                 var cam = camGo.AddComponent<Camera>();
                 cam.enabled = false;
                 cam.orthographic = true;
@@ -224,36 +279,48 @@ namespace DadsDecals
                 cam.renderingPath = RenderingPath.Forward;
                 cam.targetTexture = rt;
                 cam.Render();
+                cam.targetTexture = null;
 
                 var prev = RenderTexture.active;
                 RenderTexture.active = rt;
-                var tex = new Texture2D(w, h, TextureFormat.RGBA32, mipChain: true);
-                tex.ReadPixels(new Rect(0, 0, w, h), 0, 0, recalculateMipMaps: false);
+                var read = new Texture2D(w, h, TextureFormat.RGBA32, mipChain: false);
+                read.ReadPixels(new Rect(0, 0, w, h), 0, 0, recalculateMipMaps: false);
                 RenderTexture.active = prev;
-                cam.targetTexture = null;
-                RenderTexture.ReleaseTemporary(rt);
-
-                // The blend leaves colour premultiplied by coverage; decals expect straight alpha.
-                var px = tex.GetPixels32();
-                for (var i = 0; i < px.Length; i++)
-                {
-                    var a = px[i].a;
-                    if (a == 0 || a == 255) continue;
-                    px[i].r = (byte)Mathf.Min(255, px[i].r * 255 / a);
-                    px[i].g = (byte)Mathf.Min(255, px[i].g * 255 / a);
-                    px[i].b = (byte)Mathf.Min(255, px[i].b * 255 / a);
-                }
-                tex.SetPixels32(px);
-                tex.name = "DadsDecal text " + text;
-                tex.wrapMode = TextureWrapMode.Clamp;
-                tex.anisoLevel = 4;
-                tex.Apply(updateMipmaps: true, makeNoLongerReadable: true);
-                return new Entry { Texture = tex, Aspect = (float)w / h };
+                var px = read.GetPixels32();
+                UnityEngine.Object.DestroyImmediate(read);
+                return px;
             }
             finally
             {
-                UnityEngine.Object.DestroyImmediate(root);
+                UnityEngine.Object.DestroyImmediate(camGo);
+                RenderTexture.ReleaseTemporary(rt);
             }
+        }
+
+        private const byte InkAlpha = 4;   // faint antialiasing below this is ignored when cropping
+
+        private static bool FindInk(Color32[] px, int w, int h, out int x0, out int y0, out int x1, out int y1)
+        {
+            x0 = w; y0 = h; x1 = -1; y1 = -1;
+            for (var y = 0; y < h; y++)
+            for (var x = 0; x < w; x++)
+            {
+                if (px[y * w + x].a < InkAlpha) continue;
+                if (x < x0) x0 = x;
+                if (x > x1) x1 = x;
+                if (y < y0) y0 = y;
+                if (y > y1) y1 = y;
+            }
+            return x1 >= 0;
+        }
+
+        private static bool InkTouchesEdge(Color32[] px, int w, int h)
+        {
+            for (var x = 0; x < w; x++)
+                if (px[x].a >= InkAlpha || px[(h - 1) * w + x].a >= InkAlpha) return true;
+            for (var y = 0; y < h; y++)
+                if (px[y * w].a >= InkAlpha || px[y * w + w - 1].a >= InkAlpha) return true;
+            return false;
         }
 
         private static GameObject MakeText(Transform parent, Font font, string text, TextSpec spec, FontStyle style, int fontSize, Color color, Vector3 offset)

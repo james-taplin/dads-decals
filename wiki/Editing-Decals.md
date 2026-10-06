@@ -6,7 +6,7 @@ Open the **Edit** tab to work on decals you've already placed.
 
 ## Selecting
 - **Click a decal on the car** to select it. If decals overlap, the smallest one under the cursor wins.
-- Or click it in the **Decals on this car** list. Mirrored pairs are marked *(mirrored pair)*.
+- Or click it in the **Decals on this car** list. It's shown top layer first; mirrored pairs are marked *(mirrored pair)*.
 - The selected decal **pulses blue** on the car. Its mirrored twin pulses too.
 - **Right-click** in the world to deselect.
 - Editing pauses while the Decals window is closed or the mouse is locked: the selected decal stops pulsing and clicks, keys and the mouse wheel do nothing. It's still selected when you open the window again.
@@ -27,6 +27,14 @@ Open the **Edit** tab to work on decals you've already placed.
 - **Mirror to other side**: adds a linked mirror copy on the opposite side.
 - **Unlink mirror**: breaks the link, so the two copies can be edited separately.
 - **Delete**: removes the decal (and its twin if linked).
+
+## Layers: which decal is on top
+Where decals overlap, the one on a higher layer always shows on top, from every angle.
+- New decals (placed or duplicated) go on top.
+- The Edit tab shows the selected decal's **Layer n of N** (1 = bottom), with **To back**, **Backward**, **Forward** and **To front**.
+- A mirrored pair is one layer: both sides move together.
+- Layers only matter between decals on the same car. Undo puts the old order back.
+- Up to 49 layers per car are kept strictly apart. On a car with more, neighbouring layers can share a slot, and decals overlapping across those two may sort by distance instead.
 
 ## Mirrored pairs
 A pair made with **Mirror to other side** stays linked:
