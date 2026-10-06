@@ -53,4 +53,4 @@ Both effects are procedural, so they work on any image, and each decal gets its 
 
 Both are in real-world units, so a small placard and a large herald get similar-sized streaks and chips.
 
-![Text with outline and chipping, and the decal sitting in the livery's shadows](../docs/images/showcase-text-outline-chipping.webp)
+![A chipped road number and lettering sitting in the tender's own grime and shadows](../docs/images/showcase-tender-lettering.webp)
