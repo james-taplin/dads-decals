@@ -6,7 +6,7 @@
 - The toolbar and its panels only show while the **cursor is free**.
 
 ## No preview appears when I point at a car
-Open the **Debug** tab (or watch the **Aiming at:** line in the Place tab):
+Open the **Debug** tab and watch its **Aiming at:** line while placing:
 - **"waiting: mouse is over the panel/toolbar"**: move the mouse off the window.
 - **"waiting: cursor hidden"**: free the cursor.
 - **"paused: panel closed or mouse not free"**: Dad's Decals pauses while the Decals window is off screen. Free the cursor and open the window.

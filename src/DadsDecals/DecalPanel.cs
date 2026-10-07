@@ -28,6 +28,17 @@ namespace DadsDecals
         private GUIStyle? swatchStyle;
         private GUIStyle? selectedStyle;
         private GUIStyle? sectionStyle;
+        private GUIStyle? panelStyle;
+        private GUIStyle? statusStyle;
+        private GUIStyle? carStyle;
+        private GUIStyle? unitStyle;
+
+        // Layout: two columns once the window is at least this wide (resize from its bottom-right corner).
+        private const float TwoColumnWidth = 700f;
+        private const float LabelWidth = 110f;
+        private Vector2 leftScroll, rightScroll;
+        private float headerBottom = 90f;   // measured each repaint: where the columns start
+        private readonly Dictionary<string, string> numberEdits = new Dictionary<string, string>();
 
         private static Interaction I => Interaction.Instance!;
 
@@ -50,9 +61,7 @@ namespace DadsDecals
         public void Draw(Rect rect)
         {
             LastDrawFrame = Time.frameCount;
-            swatchStyle ??= new GUIStyle(GUI.skin.box) { normal = { background = Texture2D.whiteTexture } };
-            selectedStyle ??= new GUIStyle(GUI.skin.button) { fontStyle = FontStyle.Bold };
-            sectionStyle ??= new GUIStyle(GUI.skin.button) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
+            EnsureStyles();
 
             // One undo step per slider drag / text edit on the selected decal.
             var e = Event.current;
@@ -62,23 +71,97 @@ namespace DadsDecals
                 Undo.BeginGesture(layout);
             if (e.type == EventType.MouseUp) Undo.EndGesture();
 
+            // Solid background (the Toolbar window itself is see-through), at least as tall as the window.
+            GUILayout.BeginVertical(panelStyle, GUILayout.MinHeight(Mathf.Max(100f, rect.height - 40f)));
+
             if (Assets.DecalShader == null)
                 GUILayout.Label("Decal shader failed to load - see the mod log.");
 
             var newTab = GUILayout.Toolbar(tab, Tabs);
             if (newTab != tab) SwitchTab(newTab);
-
-            GUILayout.Label(car != null
-                ? $"Car: {car.ID}  ({car.carLivery?.id})  - {layout?.Decals.Count ?? 0} decal(s)"
-                : "Point at a loco, tender or wagon (or get on one).");
+            DrawStatus(car, layout);
+            if (e.type == EventType.Repaint) headerBottom = GUILayoutUtility.GetLastRect().yMax;
 
             switch (tab)
             {
                 case 0: DrawPlaceTab(rect, car); break;
-                case 1: DrawEditTab(car, layout); break;
+                case 1: DrawEditTab(rect, car, layout); break;
                 case 2: DrawLayoutsTab(car, layout); break;
                 case 3: DrawDebugTab(car); break;
             }
+            GUILayout.EndVertical();
+        }
+
+        private void EnsureStyles()
+        {
+            swatchStyle ??= new GUIStyle(GUI.skin.box) { normal = { background = Texture2D.whiteTexture } };
+            selectedStyle ??= new GUIStyle(GUI.skin.button) { fontStyle = FontStyle.Bold };
+            sectionStyle ??= new GUIStyle(GUI.skin.button) { fontStyle = FontStyle.Bold, alignment = TextAnchor.MiddleLeft };
+            if (panelStyle == null)
+            {
+                // Unity's own dark grey, just opaque, so scenery doesn't show through the text.
+                var tex = new Texture2D(1, 1) { hideFlags = HideFlags.HideAndDontSave };
+                tex.SetPixel(0, 0, new Color(0.18f, 0.18f, 0.19f, 1f));
+                tex.Apply();
+                panelStyle = new GUIStyle { normal = { background = tex }, padding = new RectOffset(6, 6, 6, 6) };
+            }
+            statusStyle ??= new GUIStyle(GUI.skin.box) { alignment = TextAnchor.MiddleLeft, richText = true, wordWrap = true, padding = new RectOffset(8, 8, 5, 5) };
+            carStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleRight, wordWrap = false };
+            unitStyle ??= new GUIStyle(GUI.skin.label) { alignment = TextAnchor.MiddleLeft, padding = new RectOffset(2, 0, 0, 0) };
+        }
+
+        /// <summary>One line saying what the mouse will do now, plus the car being worked on.</summary>
+        private void DrawStatus(TrainCar? car, LocoLayout? layout)
+        {
+            string what;
+            if (I.Mode == ToolMode.Place)
+            {
+                var over = I.Car != null ? I.Car.GetComponent<DecalRenderer>() : null;
+                var aim = over != null && over.GhostDraws > 0 ? $"  ·  over {I.Car!.ID}" : "  ·  point at a car";
+                what = $"<color=#5DCAA5>●</color> <b>Placing</b> {Safe(I.Template.DisplayName)}{aim}\n" +
+                       "Left-click places · right-click stops · Ctrl+wheel rotates · Shift+wheel resizes";
+            }
+            else if (I.Mode == ToolMode.Edit && I.Selected != null)
+                what = $"<color=#5DCAA5>●</color> <b>Editing</b> {Safe(I.Selected.DisplayName)}\n" +
+                       "Drag moves · Ctrl+wheel rotates · Shift+wheel resizes · Delete removes · right-click deselects";
+            else if (I.Mode == ToolMode.Edit)
+                what = "<b>Edit</b>  ·  click a decal on the car to select it";
+            else if (tab == 0)
+                what = "<b>Place</b>  ·  pick an image, or write some text, then click a car";
+            else
+                what = "";
+
+            GUILayout.BeginHorizontal(statusStyle);
+            GUILayout.Label(what, RichLabel, GUILayout.ExpandWidth(true));
+            GUILayout.Label(car != null ? $"{car.ID} · {car.carLivery?.id} · {layout?.Decals.Count ?? 0} decal(s)" : "Point at a car, or get on one", carStyle);
+            GUILayout.EndHorizontal();
+        }
+
+        private static GUIStyle? richLabel;
+        private static GUIStyle RichLabel => richLabel ??= new GUIStyle(GUI.skin.label) { richText = true, wordWrap = true };
+
+        /// <summary>Text from the player shown inside rich text: stop it being read as markup.</summary>
+        private static string Safe(string s) => s.Replace("<", "‹").Replace(">", "›");
+
+        /// <summary>Runs <paramref name="left"/> and <paramref name="right"/> side by side, each scrolling on its own, on a wide window; one after the other otherwise.</summary>
+        private void Columns(Rect rect, Action<float> left, Action right)
+        {
+            if (rect.width < TwoColumnWidth)
+            {
+                left(rect.width);
+                right();
+                return;
+            }
+            var leftWidth = Mathf.Max(280f, rect.width * 0.45f);
+            var height = Mathf.Max(200f, rect.height - 48f - headerBottom);
+            GUILayout.BeginHorizontal();
+            leftScroll = GUILayout.BeginScrollView(leftScroll, GUILayout.Width(leftWidth), GUILayout.Height(height));
+            left(leftWidth - 24f);
+            GUILayout.EndScrollView();
+            rightScroll = GUILayout.BeginScrollView(rightScroll, GUILayout.Height(height));
+            right();
+            GUILayout.EndScrollView();
+            GUILayout.EndHorizontal();
         }
 
         /// <summary>A fold-out header. Returns whether the section is open; folded sections are remembered.</summary>
@@ -113,47 +196,40 @@ namespace DadsDecals
         private void DrawPlaceTab(Rect rect, TrainCar? car)
         {
             var t = I.Template;
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Toggle(t.Kind == DecalKind.Image, "Image", "Button")) t.Kind = DecalKind.Image;
-            if (GUILayout.Toggle(t.Kind == DecalKind.Text, "Text", "Button"))
+            Columns(rect, width =>
             {
-                if (t.Kind != DecalKind.Text && I.Mode == ToolMode.Place) I.StopPlacing();
-                t.Kind = DecalKind.Text;
-            }
-            GUILayout.EndHorizontal();
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Toggle(t.Kind == DecalKind.Image, "Image", "Button")) t.Kind = DecalKind.Image;
+                if (GUILayout.Toggle(t.Kind == DecalKind.Text, "Text", "Button"))
+                {
+                    if (t.Kind != DecalKind.Text && I.Mode == ToolMode.Place) I.StopPlacing();
+                    t.Kind = DecalKind.Text;
+                }
+                GUILayout.EndHorizontal();
+                if (I.Mode == ToolMode.Place && GUILayout.Button("Stop placing")) I.StopPlacing();
 
-            if (I.Mode == ToolMode.Place)
+                if (t.Kind == DecalKind.Image) DrawPalette(width);
+                else
+                {
+                    t.Text ??= new TextSpec { Font = Main.Settings.LastFont };
+                    if (Section("place.text", "Text")) DrawTextEditor(t.Text, car, "place");
+                    if (I.Mode != ToolMode.Place && GUILayout.Button("Place this text")) I.StartPlacing();
+                }
+            }, () =>
             {
-                GUILayout.Label("Left-click a loco, tender or wagon to place. Right-click or the button stops.");
-                GUILayout.Label("Ctrl+wheel rotates, Shift+wheel resizes.");
-                var dr = I.Car != null ? I.Car.GetComponent<DecalRenderer>() : null;
-                GUILayout.Label($"Aiming at: {I.AimInfo}  |  preview on {(dr != null ? dr.GhostDraws : 0)} part(s)");
-                if (GUILayout.Button("Stop placing")) I.StopPlacing();
-            }
-
-            GUILayout.BeginHorizontal();
-            I.KeepLevel = GUILayout.Toggle(I.KeepLevel, "Keep level");
-            I.SnapRotation = GUILayout.Toggle(I.SnapRotation, "Snap 15°");
-            I.MirrorPlace = GUILayout.Toggle(I.MirrorPlace, "Mirror to other side");
-            GUILayout.EndHorizontal();
-
-            if (t.Kind == DecalKind.Image) DrawPalette(rect);
-            else
-            {
-                t.Text ??= new TextSpec { Font = Main.Settings.LastFont };
-                if (Section("place.text", "Text")) DrawTextEditor(t.Text, car, "place");
-                if (I.Mode != ToolMode.Place && GUILayout.Button("Place this text")) I.StartPlacing();
-            }
-
-            GUILayout.Space(6);
-            GUILayout.Label("Settings for the next decal");
-            DrawStyle(t, car, "place", null);
+                GUILayout.BeginHorizontal();
+                I.KeepLevel = GUILayout.Toggle(I.KeepLevel, "Keep level");
+                I.SnapRotation = GUILayout.Toggle(I.SnapRotation, "Snap 15°");
+                I.MirrorPlace = GUILayout.Toggle(I.MirrorPlace, "Mirror to other side");
+                GUILayout.EndHorizontal();
+                DrawStyle(t, car, "place", null);
+            });
         }
 
-        private void DrawPalette(Rect rect)
+        private void DrawPalette(float width)
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label("Click an image to place it");
+            GUILayout.FlexibleSpace();
             if (GUILayout.Button("Reload folder", GUILayout.Width(110)))
             {
                 I.StopPlacing();
@@ -164,7 +240,7 @@ namespace DadsDecals
             if (Main.Library.Images.Count == 0)
                 GUILayout.Label($"No PNGs yet. Put some in:\n{Main.DecalsDir}");
 
-            var perRow = Mathf.Max(1, (int)((rect.width - 40f) / (ThumbSize + 6f)));
+            var perRow = Mathf.Max(1, (int)((width - 20f) / (ThumbSize + 6f)));
             foreach (var group in Main.Library.Images.GroupBy(i => i.Category).OrderBy(g => g.Key))
             {
                 var items = group.OrderBy(i => i.Name).ToList();
@@ -228,7 +304,7 @@ namespace DadsDecals
             GUILayout.EndHorizontal();
 
             ColourField("Text colour", id + ".text", s.Color);
-            s.Outline = Slider("Outline", s.Outline, 0f, 0.15f);
+            s.Outline = Slider(id + ".outline", "Outline", s.Outline, 0f, 0.15f, 0f, "%", 100f, "0");
             if (s.Outline > 0) ColourField("Outline colour", id + ".outline", s.OutlineColor);
 
             var preview = TextDecals.GetTexture(s, car);
@@ -253,15 +329,15 @@ namespace DadsDecals
             Assets.MaterialFor(d, car, out var aspect, allowRender: false);
             if (Section("style.size", "Size and placement"))
             {
-                d.Size[0] = Slider("Width (m)", d.Size[0], 0.02f, 5f);
+                d.Size[0] = Slider(id + ".w", "Width", d.Size[0], 0.02f, 5f, 0.6f, "m");
                 I.LockAspect = GUILayout.Toggle(I.LockAspect, "Keep image proportions");
-                if (!I.LockAspect) d.Size[1] = Slider("Height (m)", d.Size[1], 0.02f, 5f);
+                if (!I.LockAspect) d.Size[1] = Slider(id + ".h", "Height", d.Size[1], 0.02f, 5f, 0.6f, "m");
 
-                d.Angle = Slider("Rotation (deg)", d.Angle, -180f, 180f);
+                d.Angle = Slider(id + ".rot", "Rotation", d.Angle, -180f, 180f, 0f, "°", 1f, "0.#");
                 if (I.SnapRotation) d.Angle = Mathf.Round(d.Angle / 15f) * 15f;
-                d.Size[2] = Slider("Projection depth (m)", d.Size[2], 0.05f, 3f);
-                d.WrapAngle = Slider("Wrap angle (deg)", d.WrapAngle, 5f, 89f);
-                d.Opacity = Slider("Opacity", d.Opacity, 0f, 1f);
+                d.Size[2] = Slider(id + ".depth", "Depth", d.Size[2], 0.05f, 3f, 1f, "m");
+                d.WrapAngle = Slider(id + ".wrap", "Wrap angle", d.WrapAngle, 5f, 89f, 75f, "°", 1f, "0");
+                d.Opacity = Slider(id + ".opacity", "Opacity", d.Opacity, 0f, 1f, 1f, "%", 100f, "0");
                 GUILayout.BeginHorizontal();
                 d.MirrorX = GUILayout.Toggle(d.MirrorX, "Flip horizontally");
                 d.MirrorY = GUILayout.Toggle(d.MirrorY, "Flip vertically");
@@ -280,20 +356,20 @@ namespace DadsDecals
                 if (GUILayout.Button("Gloss vinyl")) { d.Smoothness = 0.75f; d.Metallic = 0f; GUI.changed = true; }
                 if (GUILayout.Button("Metal plate")) { d.Smoothness = 0.55f; d.Metallic = 0.9f; GUI.changed = true; }
                 GUILayout.EndHorizontal();
-                d.Smoothness = Slider("Smoothness", d.Smoothness, 0f, 1f);
-                d.Metallic = Slider("Metallic", d.Metallic, 0f, 1f);
-                d.Glow = Slider("Glow", d.Glow, 0f, 3f);
+                d.Smoothness = Slider(id + ".smooth", "Smoothness", d.Smoothness, 0f, 1f, 0.35f, "%", 100f, "0");
+                d.Metallic = Slider(id + ".metal", "Metallic", d.Metallic, 0f, 1f, 0f, "%", 100f, "0");
+                d.Glow = Slider(id + ".glow", "Glow", d.Glow, 0f, 3f, 0f);
             }
 
             if (Section("style.weathering", "Weathering"))
             {
                 GUILayout.BeginHorizontal();
-                d.Grime = Slider("Grime", d.Grime, 0f, 1f);
+                d.Grime = Slider(id + ".grime", "Grime", d.Grime, 0f, 1f, 0f, "%", 100f, "0");
                 if (GUILayout.Button("New grime", GUILayout.Width(80))) { d.GrimeSeed = UnityEngine.Random.Range(0f, 100f); GUI.changed = true; }
                 GUILayout.EndHorizontal();
                 ColourField("Grime colour", id + ".grime", d.GrimeColor);
                 GUILayout.BeginHorizontal();
-                d.Chipping = Slider("Chipping", d.Chipping, 0f, 1f);
+                d.Chipping = Slider(id + ".chip", "Chipping", d.Chipping, 0f, 1f, 0f, "%", 100f, "0");
                 if (GUILayout.Button("New chips", GUILayout.Width(80))) { d.ChipSeed = UnityEngine.Random.Range(0f, 100f); GUI.changed = true; }
                 GUILayout.EndHorizontal();
             }
@@ -306,11 +382,34 @@ namespace DadsDecals
             GUI.changed |= before;
         }
 
-        private static float Slider(string label, float value, float min, float max)
+        /// <summary>
+        /// A settings row: label, slider, a box to type an exact value, its unit, and Reset.
+        /// <paramref name="scale"/> converts the stored value to the shown one (100 for percentages).
+        /// </summary>
+        private float Slider(string id, string label, float value, float min, float max, float defaultValue, string unit = "", float scale = 1f, string format = "0.##")
         {
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"{label}: {value:0.##}", GUILayout.Width(170));
-            value = GUILayout.HorizontalSlider(value, min, max);
+            GUILayout.Label(label, GUILayout.Width(LabelWidth));
+            value = GUILayout.HorizontalSlider(value, min, max, GUILayout.MinWidth(60f));
+
+            // While the box has focus, keep what's being typed; otherwise show the current value.
+            var shown = (value * scale).ToString(format, System.Globalization.CultureInfo.InvariantCulture);
+            var focused = GUI.GetNameOfFocusedControl() == id;
+            if (!focused || !numberEdits.TryGetValue(id, out var text)) text = shown;
+            GUI.SetNextControlName(id);
+            var typed = GUILayout.TextField(text, 8, GUILayout.Width(56f));
+            numberEdits[id] = typed;
+            if (typed != text && float.TryParse(typed.Replace(',', '.'), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
+                value = Mathf.Clamp(parsed / scale, min, max);
+            GUILayout.Label(unit, unitStyle, GUILayout.Width(18f));
+
+            if (GUILayout.Button(new GUIContent("Reset", $"Back to {(defaultValue * scale).ToString(format, System.Globalization.CultureInfo.InvariantCulture)}{unit}"), GUILayout.Width(48f)))
+            {
+                value = defaultValue;
+                numberEdits.Remove(id);
+                GUI.FocusControl(null);
+                GUI.changed = true;
+            }
             GUILayout.EndHorizontal();
             return value;
         }
@@ -331,7 +430,7 @@ namespace DadsDecals
             colourOpen.TryGetValue(id, out var open);
 
             GUILayout.BeginHorizontal();
-            GUILayout.Label(label, GUILayout.Width(170));
+            GUILayout.Label(label, GUILayout.Width(LabelWidth));
             Swatch(colour, 28);
             var hex = ColorUtility.ToHtmlStringRGB(colour);
             if (!hexEdits.TryGetValue(id, out var edit) || GUIUtility.keyboardControl == 0) edit = hex;
@@ -346,9 +445,9 @@ namespace DadsDecals
             GUILayout.EndHorizontal();
             if (!open) return;
 
-            c[0] = Slider("  Red", c[0], 0f, 1f);
-            c[1] = Slider("  Green", c[1], 0f, 1f);
-            c[2] = Slider("  Blue", c[2], 0f, 1f);
+            c[0] = Slider(id + ".r", "  Red", c[0], 0f, 1f, 1f, "", 255f, "0");
+            c[1] = Slider(id + ".g", "  Green", c[1], 0f, 1f, 1f, "", 255f, "0");
+            c[2] = Slider(id + ".b", "  Blue", c[2], 0f, 1f, 1f, "", 255f, "0");
 
             GUILayout.BeginHorizontal();
             foreach (var (name, pc) in Presets)
@@ -426,20 +525,41 @@ namespace DadsDecals
             Layers.Apply(layout.Decals, sel, move);
         }
 
-        private void DrawEditTab(TrainCar? car, LocoLayout? layout)
+        private void DrawEditTab(Rect rect, TrainCar? car, LocoLayout? layout)
         {
             if (I.Mode != ToolMode.Edit) I.StartEditing();
-            GUILayout.Label("Click a decal on the car to select it. Drag to move. Ctrl+wheel rotates, Shift+wheel resizes, Delete removes, right-click deselects.");
-            GUILayout.BeginHorizontal();
-            I.KeepLevel = GUILayout.Toggle(I.KeepLevel, "Keep level (when moving)");
-            I.SnapRotation = GUILayout.Toggle(I.SnapRotation, "Snap 15°");
-            GUILayout.EndHorizontal();
-
             if (car == null || layout == null || layout.Decals.Count == 0)
             {
                 GUILayout.Label("No decals on this car yet.");
                 return;
             }
+            Columns(rect, _ => DrawEditList(car, layout), () =>
+            {
+                var sel = I.Selected;
+                if (sel == null || I.SelectedCar != car || !layout.Decals.Contains(sel))
+                {
+                    GUILayout.Label("Select a decal (on the car, or in the list) to change it.");
+                    return;
+                }
+                if (sel.Kind == DecalKind.Text && sel.Text != null)
+                {
+                    var before = GUI.changed;
+                    GUI.changed = false;
+                    if (Section("edit.text", "Text")) DrawTextEditor(sel.Text, car, "edit");
+                    if (GUI.changed) { Undo.Changed(layout); Interaction.SyncTwin(layout, sel); }
+                    GUI.changed |= before;
+                }
+                DrawStyle(sel, car, "edit", layout);
+            });
+        }
+
+        /// <summary>Edit tab, left side: options, undo, the decal list and actions on the selected decal.</summary>
+        private void DrawEditList(TrainCar car, LocoLayout layout)
+        {
+            GUILayout.BeginHorizontal();
+            I.KeepLevel = GUILayout.Toggle(I.KeepLevel, "Keep level (when moving)");
+            I.SnapRotation = GUILayout.Toggle(I.SnapRotation, "Snap 15°");
+            GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
             GUI.enabled = Undo.CanUndo(layout);
@@ -467,7 +587,7 @@ namespace DadsDecals
             }
 
             var sel = I.Selected;
-            if (sel == null || I.SelectedCar != car) return;
+            if (sel == null || I.SelectedCar != car || layout.Decals.Count == 0) return;
 
             GUILayout.Space(6);
             GUILayout.Label($"Selected: {sel.DisplayName}");
@@ -520,7 +640,7 @@ namespace DadsDecals
             // Stacking order: which decal shows on top where decals overlap.
             var (layer, layers) = Layers.Position(layout.Decals, sel);
             GUILayout.BeginHorizontal();
-            GUILayout.Label($"Layer {layer} of {layers}", GUILayout.Width(110));
+            GUILayout.Label($"Layer {layer} of {layers}", GUILayout.Width(LabelWidth));
             GUI.enabled = layer > 1;
             if (GUILayout.Button("To back")) Restack(layout, sel, Layers.Move.ToBack);
             if (GUILayout.Button("Backward")) Restack(layout, sel, Layers.Move.Backward);
@@ -529,16 +649,6 @@ namespace DadsDecals
             if (GUILayout.Button("To front")) Restack(layout, sel, Layers.Move.ToFront);
             GUI.enabled = true;
             GUILayout.EndHorizontal();
-
-            if (sel.Kind == DecalKind.Text && sel.Text != null)
-            {
-                var before = GUI.changed;
-                GUI.changed = false;
-                if (Section("edit.text", "Text")) DrawTextEditor(sel.Text, car, "edit");
-                if (GUI.changed) { Undo.Changed(layout); Interaction.SyncTwin(layout, sel); }
-                GUI.changed |= before;
-            }
-            DrawStyle(sel, car, "edit", layout);
         }
 
         private static void Reanchor(TrainCar car, DecalPlacement d, string newPath)
@@ -704,7 +814,8 @@ namespace DadsDecals
                 GUILayout.Label($"Dad's Decals CPU time: {RenderStats.AverageMs:0.00} ms per frame (average).");
             }
 
-            GUILayout.Label("Aiming at: " + I.AimInfo);
+            var aimed = I.Car != null ? I.Car.GetComponent<DecalRenderer>() : null;
+            GUILayout.Label($"Aiming at: {I.AimInfo}  |  preview on {(aimed != null ? aimed.GhostDraws : 0)} part(s)");
             GUILayout.Label(I.MouseInfo);
             if (car != null && GUILayout.Button("Run diagnostics on " + car.ID)) lastReport = Diagnostics.Run(car);
             if (lastReport.Length > 0) GUILayout.Label(lastReport);

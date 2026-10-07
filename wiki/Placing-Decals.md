@@ -25,7 +25,7 @@ Section headers with ▼/► (palette categories, *Size and placement*, *Colour*
 
 Placing pauses whenever the Decals window isn't on screen: when you lock the mouse to look around, or close the window from the toolbar. The preview disappears and clicks do nothing in the world. Open the window again and you carry on where you left off.
 
-While placing, the panel shows an **Aiming at:** line and how many parts the preview is drawn on. It's mainly useful if the preview doesn't appear (see [FAQ](FAQ-and-Troubleshooting.md)).
+While placing, the status line at the top of the panel says what you're placing, whether the mouse is over a car, and the controls. If the preview doesn't appear, the **Debug** tab's **Aiming at:** line shows what the mouse is hitting and how many parts the preview is drawn on (see [FAQ](FAQ-and-Troubleshooting.md)).
 
 ![Placing mode: the Aiming at line in the panel and the live preview on the tender](../docs/images/gui-placing-preview.png)
 
