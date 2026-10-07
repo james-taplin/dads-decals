@@ -51,7 +51,6 @@ namespace DadsDecals
         private readonly DecalPlacement ghost = new DecalPlacement();
         private readonly DecalPlacement ghostTwin = new DecalPlacement();
         private bool ghostValid;
-        private ModToolbarWindow? panelWindow;
         private Action<Color>? pickCallback;
 
         private bool mouseDownOnSelected;
@@ -434,9 +433,7 @@ namespace DadsDecals
             var scale = DerailValleyModToolbar.Main.settings != null ? DerailValleyModToolbar.Main.settings.Scale : 1f;
             var gui = new Vector2(Input.mousePosition.x, Screen.height - Input.mousePosition.y) / scale;
             if (gui.y < Toolbar.Margin * 2 + Toolbar.ButtonSize) return true;
-            if (panelWindow == null)
-                panelWindow = FindObjectsOfType<ModToolbarWindow>().FirstOrDefault(w => w.Title == DecalPanel.Title);
-            return panelWindow != null && panelWindow.Visible && panelWindow.WindowRect.HasValue && panelWindow.WindowRect.Value.Contains(gui);
+            return PanelWindows.Contains(gui);
         }
     }
 }
