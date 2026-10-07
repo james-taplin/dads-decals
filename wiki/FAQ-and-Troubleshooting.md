@@ -17,10 +17,10 @@ Open the **Debug** tab (or watch the **Aiming at:** line in the Place tab):
 Adjust **Projection depth**: higher reaches further into the bodywork. If a decal shows through to an inner surface, lower it, or reduce the **Wrap angle**.
 
 ## Parts of letters are cut off
-Fixed in 0.3.2. Older versions cut off descenders (g, j, p, q, y) and the flourishes of script fonts, both in the panel preview and on the car. Text is now cropped to the actual ink, so every font fits. Existing text decals are redrawn automatically; they may come out a touch bigger or smaller than before.
+Fixed in 0.3.1. Older versions cut off descenders (g, j, p, q, y) and the flourishes of script fonts, both in the panel preview and on the car. Text is now cropped to the actual ink, so every font fits. Existing text decals are redrawn automatically; they may come out a touch bigger or smaller than before.
 
 ## Overlapping decals swap places as I move the camera
-Fixed in 0.3.2 with layers: see [Editing decals](Editing-Decals.md#layers-which-decal-is-on-top).
+Fixed in 0.3.1 with layers: see [Editing decals](Editing-Decals.md#layers-which-decal-is-on-top).
 
 ## Text looks blurry
 Text resolution follows the decal's size. If small text looks soft up close, make the decal a bit larger, or use a bolder font.
@@ -47,7 +47,15 @@ Fixed in 0.3.0. Locomotive Mesh Splitter mirrors the S060's body pieces, and old
 No. It works on vanilla and custom (CCL) cars as they are.
 
 ## Does it affect performance?
-Each decal redraws the few parts of the car it touches, only in the camera you're looking through. A few dozen decals on a train should be unnoticeable. Text decals are rendered once and cached.
+Each decal redraws the few parts of the car it touches, only in the camera you're looking through. A few dozen decals on a train should be unnoticeable. Text decals are rendered once and cached, and which parts each decal touches is worked out once and remembered.
+
+The **Debug** tab's **Performance** section has two settings:
+- **Decal detail**: *High* draws every decal; *Medium* (the default) skips decals under 2 pixels on screen; *Low* skips anything under 6 pixels. Far-off placards disappear first; big lettering stays.
+- **Max draw distance**: decals further away than this aren't drawn. *No limit* by default.
+
+It also shows how many decals were drawn and skipped last frame, and how much time Dad's Decals takes per frame.
+
+The selected decal and the placement preview are never skipped.
 
 ## Reporting a bug
 Open an issue on [GitHub](https://github.com/james-taplin/dads-decals/issues) with:

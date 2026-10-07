@@ -47,7 +47,7 @@ namespace DadsDecals
             var readable = targets.Where(t => t.mesh.isReadable).ToList();
             var totalVerts = targets.Sum(t => t.mesh.vertexCount);
             var readableVerts = readable.Sum(t => t.mesh.vertexCount);
-            sb.AppendLine($"Exterior LOD0 targets: {targets.Count}, readable: {readable.Count}  " +
+            sb.AppendLine($"Exterior targets (all detail levels): {targets.Count}, readable: {readable.Count}  " +
                           $"(vertices {readableVerts}/{totalVerts} = {(totalVerts == 0 ? 0 : 100 * readableVerts / totalVerts)}% readable)");
             sb.AppendLine($"Skinned renderers: {car.GetComponentsInChildren<SkinnedMeshRenderer>(true).Length}");
 
@@ -67,7 +67,7 @@ namespace DadsDecals
             var summary = sb.ToString();
 
             sb.AppendLine();
-            sb.AppendLine("All exterior LOD0 targets:");
+            sb.AppendLine("All exterior targets:");
             foreach (var t in targets)
                 sb.AppendLine($"  {(t.mesh.isReadable ? "R" : "-")} verts={t.mesh.vertexCount,6}  {t.path}  mesh={t.mesh.name}  shader={t.r.sharedMaterial?.shader?.name}");
 
