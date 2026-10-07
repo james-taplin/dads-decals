@@ -2,13 +2,18 @@
 
 All notable changes to Dad's Decals. Versions follow [semantic versioning](https://semver.org/); dates are YYYY-MM-DD.
 
-## [Unreleased]
+## [0.3.2] - unreleased (in development on the `gui` branch)
 
 ### Added
+- **Type exact values.** Every settings slider now has a box to type a number into, its unit, and a **Reset** button (hover it to see the default). Percentages for opacity, smoothness, metallic, grime, chipping and outline; degrees for rotation and wrap angle; 0–255 for colour sliders.
+- **Two-column layout** when the window is 700 px or wider (drag its bottom-right corner): in Place, images or the text editor on the left and settings on the right; in Edit, the decal list and actions on the left and the selected decal's settings on the right. Each column scrolls on its own. Narrower windows keep one column.
+- **Status line** under the tabs: what you're placing or editing, whether the mouse is over a car, the controls for that mode, and the car you're working on. It replaces the paragraphs of help text.
 - **Performance settings** in the Debug tab: *Decal detail* (High / Medium / Low) skips decals that are only a few pixels big on screen, and *Max draw distance* skips far-away ones. The selected decal and the placement preview are never skipped.
 - **Performance readout** in the Debug tab: decals drawn and skipped last frame, parts drawn, and Dad's Decals' CPU time per frame.
 
 ### Changed
+- **Solid panel.** The window body is now opaque (Unity's default grey), so scenery no longer shows through the text.
+- The **Aiming at** readout (with the preview's part count) moved from the Place tab to the Debug tab.
 - **Decals stay on at a distance.** They used to be drawn only on each car's full-detail model, so they could vanish when a car switched to its low-detail model far away. They now draw on whichever detail level is showing.
 - **Less work per frame.** Which parts each decal overlaps is now worked out once and remembered until the decal or the car changes, instead of being checked against every part every frame.
 - **Faster on split locos.** Parts are matched using the triangles they actually draw. Locomotive Mesh Splitter's S060 pieces each carry the whole body's vertices, so every decal used to be drawn on all ~50 pieces.
