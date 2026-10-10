@@ -2,7 +2,7 @@
 
 All notable changes to Dad's Decals. Versions follow [semantic versioning](https://semver.org/); dates are YYYY-MM-DD.
 
-## [0.3.2] - unreleased (in development on the `gui` branch)
+## [0.3.2] - unreleased
 
 ### Added
 - **Type exact values.** Every settings slider now has a box to type a number into, its unit, and a **Reset** button (hover it to see the default). Percentages for opacity, smoothness, metallic, grime, chipping and outline; degrees for rotation and wrap angle; 0–255 for colour sliders.
@@ -14,6 +14,7 @@ All notable changes to Dad's Decals. Versions follow [semantic versioning](https
 ### Changed
 - **Solid panel.** The window body is now opaque (Unity's default grey), so scenery no longer shows through the text.
 - The **Aiming at** readout (with the preview's part count) moved from the Place tab to the Debug tab.
+- *Testing only, comes out before release:* clicks in the two windows are written to the mod log (`[click]` lines), to track down image thumbnails that sometimes ignore a click.
 - **Decals stay on at a distance.** They used to be drawn only on each car's full-detail model, so they could vanish when a car switched to its low-detail model far away. They now draw on whichever detail level is showing.
 - **Less work per frame.** Which parts each decal overlaps is now worked out once and remembered until the decal or the car changes, instead of being checked against every part every frame.
 - **Faster on split locos.** Parts are matched using the triangles they actually draw. Locomotive Mesh Splitter's S060 pieces each carry the whole body's vertices, so every decal used to be drawn on all ~50 pieces.
