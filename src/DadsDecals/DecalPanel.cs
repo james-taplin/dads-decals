@@ -35,6 +35,8 @@ namespace DadsDecals
         private GUIStyle? unitStyle;
 
         private const float LabelWidth = 110f;
+        /// <summary>Button as wide as its text.</summary>
+        private static readonly GUILayoutOption Fit = GUILayout.ExpandWidth(false);
         private bool settingsWanted;        // last automatic open/close decision for the settings window
         private bool settingsPlaced;
         private readonly Dictionary<string, string> numberEdits = new Dictionary<string, string>();
@@ -65,6 +67,7 @@ namespace DadsDecals
             var car = CurrentCar;
             var layout = car != null ? Main.Layouts.Get(car.CarGUID) : null;
             TrackGesture(layout);
+            LogClick("main");
 
             // Solid background (the Toolbar window itself is see-through), at least as tall as the window.
             GUILayout.BeginVertical(panelStyle, GUILayout.MinHeight(Mathf.Max(100f, rect.height - 40f)));
@@ -85,6 +88,16 @@ namespace DadsDecals
             }
             GUILayout.EndVertical();
             SyncSettingsWindow();
+        }
+
+        // TEMP (0.3.2 testing): trace clicks to find thumbnails that sometimes ignore them.
+        private static void LogClick(string window)
+        {
+            var e = Event.current;
+            if (e.type != EventType.MouseDown && e.type != EventType.MouseUp) return;
+            Main.Log.Log($"[click] {window} {e.type} b{e.button} at {e.mousePosition:F0} hot={GUIUtility.hotControl} kb={GUIUtility.keyboardControl} " +
+                         $"focus='{GUI.GetNameOfFocusedControl()}' mode={I.Mode} image={I.Template.Image} kind={I.Template.Kind} " +
+                         $"toolbox={(PanelWindows.Settings != null && PanelWindows.Settings.Visible ? PanelWindows.Settings.WindowRect?.ToString() : "hidden")} main={PanelWindows.Main?.WindowRect}");
         }
 
         /// <summary>One undo step per slider drag / text edit on the selected decal (each window gets its own events).</summary>
@@ -142,6 +155,7 @@ namespace DadsDecals
             var car = CurrentCar;
             var layout = car != null ? Main.Layouts.Get(car.CarGUID) : null;
             TrackGesture(layout);
+            LogClick("toolbox");
             GUILayout.BeginVertical(panelStyle, GUILayout.MinHeight(Mathf.Max(100f, rect.height - 40f)));
 
             var sel = I.Selected;
@@ -290,7 +304,7 @@ namespace DadsDecals
         {
             GUILayout.BeginHorizontal();
             GUILayout.FlexibleSpace();
-            if (GUILayout.Button("Reload folder", GUILayout.Width(110)))
+            if (GUILayout.Button("Reload folder", Fit))
             {
                 I.StopPlacing();
                 Main.Library.Reload();
@@ -313,6 +327,7 @@ namespace DadsDecals
                         var selected = I.Mode == ToolMode.Place && I.Template.Kind == DecalKind.Image && I.Template.Image == img.Key;
                         if (GUILayout.Toggle(selected, new GUIContent(img.Texture, img.Name), "Button", GUILayout.Width(ThumbSize), GUILayout.Height(ThumbSize)) != selected)
                         {
+                            Main.Log.Log($"[click] thumbnail {img.Key} {(selected ? "stop" : "start")} placing");
                             if (selected) I.StopPlacing();
                             else
                             {
@@ -338,7 +353,7 @@ namespace DadsDecals
 
             GUILayout.BeginHorizontal();
             GUILayout.Label($"Font: {s.Font}");
-            if (GUILayout.Button(showFontList ? "Close" : "Choose font", GUILayout.Width(100))) showFontList = !showFontList;
+            if (GUILayout.Button(showFontList ? "Close" : "Choose font", Fit)) showFontList = !showFontList;
             GUILayout.EndHorizontal();
             if (showFontList)
             {
@@ -425,12 +440,12 @@ namespace DadsDecals
             {
                 GUILayout.BeginHorizontal();
                 d.Grime = Slider(id + ".grime", "Grime", d.Grime, 0f, 1f, 0f, "%", 100f, "0");
-                if (GUILayout.Button("New grime", GUILayout.Width(80))) { d.GrimeSeed = UnityEngine.Random.Range(0f, 100f); GUI.changed = true; }
+                if (GUILayout.Button("New grime", Fit)) { d.GrimeSeed = UnityEngine.Random.Range(0f, 100f); GUI.changed = true; }
                 GUILayout.EndHorizontal();
                 ColourField("Grime colour", id + ".grime", d.GrimeColor);
                 GUILayout.BeginHorizontal();
                 d.Chipping = Slider(id + ".chip", "Chipping", d.Chipping, 0f, 1f, 0f, "%", 100f, "0");
-                if (GUILayout.Button("New chips", GUILayout.Width(80))) { d.ChipSeed = UnityEngine.Random.Range(0f, 100f); GUI.changed = true; }
+                if (GUILayout.Button("New chips", Fit)) { d.ChipSeed = UnityEngine.Random.Range(0f, 100f); GUI.changed = true; }
                 GUILayout.EndHorizontal();
             }
 
@@ -463,7 +478,7 @@ namespace DadsDecals
                 value = Mathf.Clamp(parsed / scale, min, max);
             GUILayout.Label(unit, unitStyle, GUILayout.Width(18f));
 
-            if (GUILayout.Button(new GUIContent("Reset", $"Back to {(defaultValue * scale).ToString(format, System.Globalization.CultureInfo.InvariantCulture)}{unit}"), GUILayout.Width(48f)))
+            if (GUILayout.Button(new GUIContent("Reset", $"Back to {(defaultValue * scale).ToString(format, System.Globalization.CultureInfo.InvariantCulture)}{unit}"), Fit))
             {
                 value = defaultValue;
                 numberEdits.Remove(id);
@@ -492,16 +507,20 @@ namespace DadsDecals
             GUILayout.BeginHorizontal();
             GUILayout.Label(label, GUILayout.Width(LabelWidth));
             Swatch(colour, 28);
+            // While the hex box has focus, keep what's being typed; otherwise always show the current
+            // colour. (Keeping the old text whenever *any* box had focus wrote it back over swatch clicks.)
             var hex = ColorUtility.ToHtmlStringRGB(colour);
-            if (!hexEdits.TryGetValue(id, out var edit) || GUIUtility.keyboardControl == 0) edit = hex;
+            var hexId = id + ".hex";
+            if (GUI.GetNameOfFocusedControl() != hexId || !hexEdits.TryGetValue(id, out var edit)) edit = hex;
+            GUI.SetNextControlName(hexId);
             var newEdit = GUILayout.TextField(edit, 7, GUILayout.Width(70));
             hexEdits[id] = newEdit;
-            if (newEdit != hex && newEdit.Length == 6 && ColorUtility.TryParseHtmlString("#" + newEdit, out var parsed))
+            if (newEdit != edit && newEdit != hex && newEdit.Length == 6 && ColorUtility.TryParseHtmlString("#" + newEdit, out var parsed))
             {
                 Set(c, parsed);
                 GUI.changed = true;
             }
-            if (GUILayout.Button(open ? "Close" : "Edit", GUILayout.Width(50))) colourOpen[id] = open = !open;
+            if (GUILayout.Button(open ? "Close" : "Edit", Fit)) colourOpen[id] = open = !open;
             GUILayout.EndHorizontal();
             if (!open) return;
 
@@ -538,6 +557,7 @@ namespace DadsDecals
             }
             if (GUILayout.Button(I.Picking ? "Click in the world..." : "Pick from screen"))
             {
+                GUI.FocusControl(null);
                 var target = c;
                 var layout = I.SelectedCar != null ? Main.Layouts.Get(I.SelectedCar.CarGUID) : null;
                 var selected = I.Selected;
@@ -573,6 +593,7 @@ namespace DadsDecals
             GUI.backgroundColor = c;
             var clicked = GUILayout.Button(new GUIContent("", tooltip), swatchStyle, GUILayout.Width(24), GUILayout.Height(18));
             GUI.backgroundColor = old;
+            if (clicked) GUI.FocusControl(null);   // so no number/hex box shows its old value
             return clicked;
         }
 
@@ -738,7 +759,7 @@ namespace DadsDecals
             GUILayout.BeginHorizontal();
             templateName = GUILayout.TextField(templateName);
             GUI.enabled = layout != null && layout.Decals.Count > 0 && templateName.Trim().Length > 0;
-            if (GUILayout.Button("Save as template", GUILayout.Width(130))) { LayoutFiles.SaveTemplate(templateName, layout!); templateName = ""; }
+            if (GUILayout.Button("Save as template", Fit)) { LayoutFiles.SaveTemplate(templateName, layout!); templateName = ""; }
             GUI.enabled = true;
             GUILayout.EndHorizontal();
 
@@ -764,7 +785,7 @@ namespace DadsDecals
                 {
                     GUILayout.BeginHorizontal();
                     GUILayout.Label($"{src.CarId} ({src.LiveryId}) - {src.Decals.Count} decal(s)");
-                    if (GUILayout.Button("Copy here", GUILayout.Width(90))) AddDecals(car, src.Decals, replace: false);
+                    if (GUILayout.Button("Copy here", Fit)) AddDecals(car, src.Decals, replace: false);
                     GUILayout.EndHorizontal();
                 }
             }
@@ -776,7 +797,7 @@ namespace DadsDecals
             GUILayout.BeginHorizontal();
             exportName = GUILayout.TextField(exportName);
             GUI.enabled = layout != null && layout.Decals.Count > 0 && exportName.Trim().Length > 0;
-            if (GUILayout.Button("Export", GUILayout.Width(80))) { lastExportPath = LayoutFiles.Export(exportName, layout!); exportName = ""; }
+            if (GUILayout.Button("Export", Fit)) { lastExportPath = LayoutFiles.Export(exportName, layout!); exportName = ""; }
             GUI.enabled = true;
             GUILayout.EndHorizontal();
             if (lastExportPath.Length > 0) GUILayout.Label("Exported to: " + lastExportPath);
@@ -786,7 +807,7 @@ namespace DadsDecals
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label(Path.GetFileName(dir) + (dir.StartsWith(LayoutFiles.ExportsDir) ? " (your export)" : ""));
-                if (GUILayout.Button("Import here", GUILayout.Width(90))) AddDecals(car, LayoutFiles.Import(dir), replace: false);
+                if (GUILayout.Button("Import here", Fit)) AddDecals(car, LayoutFiles.Import(dir), replace: false);
                 GUILayout.EndHorizontal();
             }
         }
@@ -795,13 +816,13 @@ namespace DadsDecals
         {
             GUILayout.BeginHorizontal();
             GUILayout.Label($"{t.Name}  ({t.LiveryId})");
-            if (GUILayout.Button("Add", GUILayout.Width(45))) AddDecals(car, LayoutFiles.LoadTemplate(t), replace: false);
-            if (GUILayout.Button("Replace", GUILayout.Width(65))) AddDecals(car, LayoutFiles.LoadTemplate(t), replace: true);
+            if (GUILayout.Button("Add", Fit)) AddDecals(car, LayoutFiles.LoadTemplate(t), replace: false);
+            if (GUILayout.Button("Replace", Fit)) AddDecals(car, LayoutFiles.LoadTemplate(t), replace: true);
             if (confirmDeleteTemplate == t.Path)
             {
-                if (GUILayout.Button("Sure?", GUILayout.Width(50))) { LayoutFiles.DeleteTemplate(t); confirmDeleteTemplate = null; }
+                if (GUILayout.Button("Sure?", Fit)) { LayoutFiles.DeleteTemplate(t); confirmDeleteTemplate = null; }
             }
-            else if (GUILayout.Button("Delete", GUILayout.Width(55))) confirmDeleteTemplate = t.Path;
+            else if (GUILayout.Button("Delete", Fit)) confirmDeleteTemplate = t.Path;
             GUILayout.EndHorizontal();
         }
 
@@ -825,12 +846,12 @@ namespace DadsDecals
             {
                 GUILayout.BeginHorizontal();
                 GUILayout.Label($"{o.CarId} ({o.LiveryId}) - {o.Decals.Count} decal(s)");
-                if (car != null && GUILayout.Button("Apply here", GUILayout.Width(80)))
+                if (car != null && GUILayout.Button("Apply here", Fit))
                 {
                     Main.Layouts.ApplyOrphan(o, car);
                     DecalRenderer.Ensure(car);
                 }
-                if (GUILayout.Button("Forget", GUILayout.Width(60))) Main.Layouts.ForgetOrphan(o);
+                if (GUILayout.Button("Forget", Fit)) Main.Layouts.ForgetOrphan(o);
                 GUILayout.EndHorizontal();
             }
         }
