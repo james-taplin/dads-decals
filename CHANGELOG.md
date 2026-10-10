@@ -18,6 +18,11 @@ All notable changes to Dad's Decals. Versions follow [semantic versioning](https
 - **Less work per frame.** Which parts each decal overlaps is now worked out once and remembered until the decal or the car changes, instead of being checked against every part every frame.
 - **Faster on split locos.** Parts are matched using the triangles they actually draw. Locomotive Mesh Splitter's S060 pieces each carry the whole body's vertices, so every decal used to be drawn on all ~50 pieces.
 
+### Fixed
+- **Edit lists the tender's decals too.** A steam loco and its tender are separate cars, and the Edit list only showed whichever one you last pointed at, so text on the tender and images on the cab never appeared together. It now lists the car's decals and those on any car coupled to it, each under its own heading.
+- **Colour swatches did nothing** until you'd picked from the screen: the hex box wrote its old value back over the click whenever any text box had focus.
+- **Button labels were cut off** at both ends: fixed-width buttons were too narrow for the game's font. They now fit their text.
+
 ## [0.3.1] - 2026-10-06 (pre-release)
 
 ### Added

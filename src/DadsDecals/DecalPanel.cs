@@ -614,12 +614,51 @@ namespace DadsDecals
             I.SnapRotation = GUILayout.Toggle(I.SnapRotation, "Snap 15°");
             GUILayout.EndHorizontal();
 
-            if (car == null || layout == null || layout.Decals.Count == 0)
+            var cars = car != null ? CarsWithDecals(car) : new List<(TrainCar, LocoLayout)>();
+            if (car == null || cars.Count == 0)
             {
                 GUILayout.Label("No decals on this car yet.");
                 return;
             }
 
+            if (I.Selected != null && I.SelectedCar == car && GUILayout.Button(PanelWindows.Settings != null && PanelWindows.Settings.Visible ? "Hide toolbox" : "Open toolbox"))
+                ToggleSettings();
+
+            if (layout != null && layout.Decals.Count > 0) DrawUndoRow(layout);
+
+            // Every decal on this car, plus any on the cars coupled to it (a steam loco's tender is
+            // its own car, so without this the list followed whichever one you last pointed at).
+            foreach (var (c, l) in cars)
+            {
+                if (!Section("edit.list" + (c == car ? "" : ".coupled"), $"Decals on {c.ID} ({l.Decals.Count}), top layer first")) continue;
+                // Bottom-first list order is the stacking order; show it top-first like a layer list.
+                for (var i = l.Decals.Count - 1; i >= 0; i--)
+                {
+                    var d = l.Decals[i];
+                    var label = $"{i + 1}. {d.DisplayName}{(d.PairId.Length > 0 ? "  (mirrored pair)" : "")}";
+                    if (GUILayout.Button(label, d == I.Selected ? selectedStyle : GUI.skin.button)) I.Select(c, d);
+                }
+            }
+        }
+
+        /// <summary>The car first (if it has decals), then each car coupled directly to it that has decals.</summary>
+        private static List<(TrainCar, LocoLayout)> CarsWithDecals(TrainCar car)
+        {
+            var result = new List<(TrainCar, LocoLayout)>();
+            void Add(TrainCar? c)
+            {
+                if (c == null || c.logicCar == null || result.Any(r => r.Item1 == c)) return;
+                var l = Main.Layouts.Get(c.CarGUID);
+                if (l != null && l.Decals.Count > 0) result.Add((c, l));
+            }
+            Add(car);
+            Add(car.frontCoupler != null ? car.frontCoupler.coupledTo?.train : null);
+            Add(car.rearCoupler != null ? car.rearCoupler.coupledTo?.train : null);
+            return result;
+        }
+
+        private void DrawUndoRow(LocoLayout layout)
+        {
             GUILayout.BeginHorizontal();
             GUI.enabled = Undo.CanUndo(layout);
             if (GUILayout.Button("Undo")) { I.Deselect(); Undo.UndoStep(layout); }
@@ -633,20 +672,6 @@ namespace DadsDecals
                 if (GUILayout.Button("Cancel")) confirmClear = false;
             }
             GUILayout.EndHorizontal();
-
-            if (I.Selected != null && I.SelectedCar == car && GUILayout.Button(PanelWindows.Settings != null && PanelWindows.Settings.Visible ? "Hide toolbox" : "Open toolbox"))
-                ToggleSettings();
-
-            if (Section("edit.list", $"Decals on this car ({layout.Decals.Count}), top layer first"))
-            {
-                // Bottom-first list order is the stacking order; show it top-first like a layer list.
-                for (var i = layout.Decals.Count - 1; i >= 0; i--)
-                {
-                    var d = layout.Decals[i];
-                    var label = $"{i + 1}. {d.DisplayName}{(d.PairId.Length > 0 ? "  (mirrored pair)" : "")}";
-                    if (GUILayout.Button(label, d == I.Selected ? selectedStyle : GUI.skin.button)) I.Select(car, d);
-                }
-            }
         }
 
         /// <summary>Settings window, top: attach to body/bogie, duplicate, mirror, delete and layer for the selected decal. False if it was deleted.</summary>
