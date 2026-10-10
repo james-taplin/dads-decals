@@ -19,10 +19,10 @@ Open the **Edit** tab to work on decals you've already placed.
 | **Shift + wheel** | Resize |
 | **Delete** key | Delete it (and its mirrored twin) |
 
-**Keep level (when moving)** and **Snap 15°** work as in the Place tab. Selecting a decal opens the **Decal settings** window beside the main one; every setting there (size, rotation, colour, finish, weathering, and the text for text decals) applies **live** to the selected decal.
+**Keep level (when moving)** and **Snap 15°** work as in the Place tab. Selecting a decal opens the **Decal toolbox** window beside the main one; every setting there (size, rotation, colour, finish, weathering, and the text for text decals) applies **live** to the selected decal.
 
 ## Buttons
-These are at the top of the **Decal settings** window when a decal is selected.
+These are at the top of the **Decal toolbox** window when a decal is selected.
 - **Attached to: Body / Front bogie / Rear bogie**: which part the decal is attached to. Changing it keeps the decal where it is in the world; it just moves with a different part from then on.
 - **Duplicate**: makes a copy just below the original and selects it, ready to drag into place.
 - **Mirror to other side**: adds a linked mirror copy on the opposite side.
@@ -32,7 +32,7 @@ These are at the top of the **Decal settings** window when a decal is selected.
 ## Layers: which decal is on top
 Where decals overlap, the one on a higher layer always shows on top, from every angle.
 - New decals (placed or duplicated) go on top.
-- The **Decal settings** window shows the selected decal's **Layer n of N** (1 = bottom), with **To back**, **Backward**, **Forward** and **To front**.
+- The **Decal toolbox** window shows the selected decal's **Layer n of N** (1 = bottom), with **To back**, **Backward**, **Forward** and **To front**.
 - A mirrored pair is one layer: both sides move together.
 - Layers only matter between decals on the same car. Undo puts the old order back.
 - Up to 49 layers per car are kept strictly apart. On a car with more, neighbouring layers can share a slot, and decals overlapping across those two may sort by distance instead.

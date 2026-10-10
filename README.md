@@ -37,7 +37,7 @@ Or go completely overboard:
 
 ## Quick start
 1. Download `DadsDecals-<version>.zip` from [Releases](https://github.com/james-taplin/dads-decals/releases) and install it with Unity Mod Manager.
-2. In game, free the cursor and click **Decals** on the Mod Toolbar.
+2. In game, free the cursor and click **DD** (Dad's Decals) on the Mod Toolbar.
 3. Click an image in the **Place** tab, point at a car and left-click.
 
 The full guide is in the **[wiki](wiki/Home.md)**:

@@ -41,8 +41,8 @@ namespace DadsDecals
 
                 panel = new DecalPanel();
                 ModToolbarAPI.Register(modEntry)
-                    .AddPanelControl("Decals", null, "Dad's Decals", panel.Draw, DecalPanel.Title, 460, 640)
-                    .AddPanelControl("Decal settings", null, "Settings for the decal you're placing or editing", panel.DrawSettings, DecalPanel.SettingsTitle, 400, 600)
+                    .AddPanelControl("Dad's Decals", null, "Dad's Decals: images, text, your decals, layouts", panel.Draw, DecalPanel.Title, 460, 640)
+                    .AddPanelControl("Decal toolbox", null, "Decal toolbox: size, look, layers and actions for the decal you're placing or editing", panel.DrawSettings, DecalPanel.SettingsTitle, 400, 600)
                     .Finish();
 
                 modEntry.OnUnload = Unload;

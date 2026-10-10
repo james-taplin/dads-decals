@@ -47,7 +47,7 @@ These sit just above the palette:
 > The game's exterior camera also zooms with the mouse wheel, so it may zoom while you resize. The sliders in the panel do the same job without that.
 
 ## Settings for the next decal
-The **Decal settings** window pops out beside the main window when you start placing (or press **Size, colour and finish...**). Everything in it applies to the decals you're about to place:
+The **Decal toolbox** window pops out beside the main window when you start placing (or press **Open toolbox**). Everything in it applies to the decals you're about to place:
 
 - **Size and placement:**
   - **Width** in metres. **Keep image proportions** sets the height from the image shape.
@@ -62,7 +62,7 @@ A decal sticks to the part you clicked:
 - the **car body**, or
 - a **bogie** (or an articulated engine unit on locos like the Big Boy).
 
-It's only drawn on that part, so a decal on the body doesn't smear onto a bogie that swings underneath it, and a decal on a bogie turns with it. You can change the attachment later: select the decal in the Edit tab and use **Attached to** in the Decal settings window.
+It's only drawn on that part, so a decal on the body doesn't smear onto a bogie that swings underneath it, and a decal on a bogie turns with it. You can change the attachment later: select the decal in the Edit tab and use **Attached to** in the Decal toolbox window.
 
 Avoid placing on animated parts inside a bogie, like rods and valve gear. The decal stays fixed to the bogie, so it slides as the rods move.
 

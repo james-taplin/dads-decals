@@ -10,7 +10,7 @@ namespace DadsDecals
     internal sealed class DecalPanel
     {
         public const string Title = "Dad's Decals";
-        public const string SettingsTitle = "Decal settings";
+        public const string SettingsTitle = "Decal toolbox";
         private const float ThumbSize = 64f;
         private static readonly string[] Tabs = { "Place", "Edit", "Layouts", "Debug" };
 
@@ -274,7 +274,7 @@ namespace DadsDecals
 
             GUILayout.BeginHorizontal();
             if (I.Mode == ToolMode.Place && GUILayout.Button("Stop placing")) I.StopPlacing();
-            if (GUILayout.Button(PanelWindows.Settings != null && PanelWindows.Settings.Visible ? "Hide settings" : "Size, colour and finish...")) ToggleSettings();
+            if (GUILayout.Button(PanelWindows.Settings != null && PanelWindows.Settings.Visible ? "Hide toolbox" : "Open toolbox")) ToggleSettings();
             GUILayout.EndHorizontal();
 
             if (t.Kind == DecalKind.Image) DrawPalette(rect.width);
@@ -613,7 +613,7 @@ namespace DadsDecals
             }
             GUILayout.EndHorizontal();
 
-            if (I.Selected != null && I.SelectedCar == car && GUILayout.Button(PanelWindows.Settings != null && PanelWindows.Settings.Visible ? "Hide settings" : "Show settings for the selected decal"))
+            if (I.Selected != null && I.SelectedCar == car && GUILayout.Button(PanelWindows.Settings != null && PanelWindows.Settings.Visible ? "Hide toolbox" : "Open toolbox"))
                 ToggleSettings();
 
             if (Section("edit.list", $"Decals on this car ({layout.Decals.Count}), top layer first"))

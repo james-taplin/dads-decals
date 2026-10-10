@@ -24,7 +24,7 @@ DadsDecals/
 ```
 
 ## Opening the panel
-The panel only appears while the mouse cursor is free (the same as other Mod Toolbar panels). Free the cursor, then click **Decals** on the toolbar strip at the top of the screen. You can drag the window by its title and resize it from the bottom-right corner, and the toolbar remembers both.
+The panel only appears while the mouse cursor is free (the same as other Mod Toolbar panels). Free the cursor, then click **DD** (Dad's Decals) on the toolbar strip at the top of the screen. The second button, **DT**, is the Decal toolbox; it opens by itself when you need it. You can drag the window by its title and resize it from the bottom-right corner, and the toolbar remembers both.
 
 ## Updating
 Install the new zip over the old one. Your layouts live in your save games, and templates, exports and your own images live in folders the update doesn't replace, so they're kept.

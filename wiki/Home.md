@@ -20,7 +20,7 @@ Dad's Decals lets you put decals on any Derail Valley loco, tender or wagon: num
 | [How it works](How-It-Works.md) | Technical notes and building from source |
 
 ## The 30-second version
-1. Free the cursor and open **Decals** on the Mod Toolbar.
+1. Free the cursor and click **DD** (Dad's Decals) on the Mod Toolbar.
 2. In the **Place** tab, click an image (or switch to **Text** and type something).
 3. Point at a car. A preview follows the mouse. Left-click to place; right-click to stop.
 4. Use the **Edit** tab to select, move and adjust what you've placed.

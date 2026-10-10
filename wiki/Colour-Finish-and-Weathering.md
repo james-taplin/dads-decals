@@ -2,7 +2,7 @@
 
 ![The Size and placement, Colour, Finish and Weathering sections](../docs/images/gui-settings.png)
 
-These sections are in the **Decal settings** window, which pops out beside the main window: for the next decal while you're placing, and for the selected decal while you're editing.
+These sections are in the **Decal toolbox** window, which pops out beside the main window: for the next decal while you're placing, and for the selected decal while you're editing.
 
 ## Colour
 **Tint** multiplies the decal's colours:

@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DadsDecals
 {
-    /// <summary>Finds our two Mod Toolbar windows: the main Decals panel and the Decal settings pop-out.</summary>
+    /// <summary>Finds our two Mod Toolbar windows: the main Dad's Decals window (DD) and the Decal toolbox pop-out (DT).</summary>
     internal static class PanelWindows
     {
         private static ModToolbarWindow? main, settings;
