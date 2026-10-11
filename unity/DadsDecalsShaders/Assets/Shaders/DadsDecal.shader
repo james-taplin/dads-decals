@@ -19,6 +19,9 @@ Shader "DadsDecals/Projected"
         _ChipSeed ("Chip seed", Float) = 0
         _Glow ("Glow", Range(0,4)) = 0
         _Highlight ("Selection highlight", Range(0,1)) = 0
+        // From DadsDecalDepth: where the first surface is across the decal. White = no limit.
+        _FirstSurface ("First surface depth", 2D) = "white" {}
+        _SurfaceTolerance ("How far past the first surface still counts (box depths)", Float) = 2
 
     }
 
@@ -56,6 +59,8 @@ Shader "DadsDecals/Projected"
         float _ChipSeed;
         half _Glow;
         half _Highlight;
+        sampler2D _FirstSurface;
+        float _SurfaceTolerance;
 
         float4x4 _WorldToDecal;
         float3 _DecalForward;   // world-space projection direction (pointing into the surface)
@@ -107,6 +112,10 @@ Shader "DadsDecals/Projected"
             clip(IN.facing - _WrapCos);
             // Seen from behind the surface (inside a cab looking at the back of its outer wall).
             clip(IN.viewSide);
+            // Well behind the first surface the decal meets, e.g. the inside of a cab's far wall,
+            // which faces the decal just like the outside it was placed on.
+            float firstSurface = tex2D(_FirstSurface, IN.decalPos.xy + 0.5).r;
+            clip(firstSurface + _SurfaceTolerance - (IN.decalPos.z + 0.5));
 
             // Not TRANSFORM_TEX: it pastes its argument unbracketed, which broke this expression.
             float2 uv = (IN.decalPos.xy + 0.5) * _MainTex_ST.xy + _MainTex_ST.zw;

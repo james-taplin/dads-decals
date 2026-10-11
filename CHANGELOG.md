@@ -19,7 +19,8 @@ First step of multiplayer support for [Derail Valley Multiplayer](https://github
 ## [0.3.3] - 2026-10-11
 
 ### Fixed
-- **Decals showed through from inside the cab.** Since 0.3.0 the decal is drawn on both sides of a surface (so it works on Locomotive Mesh Splitter's mirrored S060 pieces), and from inside a cab you could see it on the back of the outer wall. It's now hidden whenever the camera is behind the surface it's on.
+- **Decals also landed on the inside of the cab.** A decal is projected through a box that reaches *Projection depth* into the car, and it painted every surface in that box facing its way, including the inside of the cab's far wall, which faces the decal just like the outside it was placed on. Each decal now stops at the first surface it meets: when it's placed or moved, the mod takes a small depth picture of the parts along the decal's direction, and anything more than 15 cm behind that first surface is left alone. The 15 cm lets a decal carry on behind a handrail or pipe instead of leaving a gap. Curved boilers and mirrored parts (S060) are unaffected.
+- **Decals could be seen from behind the surface they're on.** Since 0.3.0 decals are drawn on both sides of a surface (for Locomotive Mesh Splitter's mirrored S060 pieces), so from inside a cab one could show on the back of the outer wall. A decal is now hidden whenever the camera is behind its surface.
 
 ## [0.3.2] - 2026-10-11
 
