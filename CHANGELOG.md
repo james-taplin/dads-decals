@@ -2,6 +2,11 @@
 
 All notable changes to Dad's Decals. Versions follow [semantic versioning](https://semver.org/); dates are YYYY-MM-DD.
 
+## [0.3.3] - 2026-10-11
+
+### Fixed
+- **Decals showed through from inside the cab.** Since 0.3.0 the decal is drawn on both sides of a surface (so it works on Locomotive Mesh Splitter's mirrored S060 pieces), and from inside a cab you could see it on the back of the outer wall. It's now hidden whenever the camera is behind the surface it's on.
+
 ## [0.3.2] - 2026-10-11
 
 First stable release. A tidier window layout, plus fixes found while testing it.

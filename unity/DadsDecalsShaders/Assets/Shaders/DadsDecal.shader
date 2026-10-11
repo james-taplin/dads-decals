@@ -32,7 +32,9 @@ Shader "DadsDecals/Projected"
         Offset -1, -1
         // Both sides: Graphics.DrawMesh doesn't flip culling for mirrored (negative-scale) targets,
         // e.g. Locomotive Mesh Splitter's S060 pieces, so back-face culling hid the decal there.
-        // The facing clip below (mesh normal vs projection direction) still rejects back faces.
+        // The facing clips below reject back faces instead: mesh normal vs projection direction,
+        // and mesh normal vs camera (so you don't see the decal through a wall from behind it,
+        // e.g. on the inside of a cab).
         Cull Off
 
         CGPROGRAM
@@ -64,6 +66,7 @@ Shader "DadsDecals/Projected"
 
             float3 decalPos;
             float facing;
+            float viewSide;   // > 0 when the camera is in front of the surface
         };
 
         void vert(inout appdata_full v, out Input o)
@@ -71,7 +74,9 @@ Shader "DadsDecals/Projected"
             UNITY_INITIALIZE_OUTPUT(Input, o);
             float3 worldPos = mul(unity_ObjectToWorld, v.vertex).xyz;
             o.decalPos = mul(_WorldToDecal, float4(worldPos, 1)).xyz;
-            o.facing = dot(UnityObjectToWorldNormal(v.normal), -_DecalForward);
+            float3 worldNormal = UnityObjectToWorldNormal(v.normal);
+            o.facing = dot(worldNormal, -_DecalForward);
+            o.viewSide = dot(worldNormal, _WorldSpaceCameraPos - worldPos);
         }
 
         float hash21(float2 p)
@@ -100,6 +105,8 @@ Shader "DadsDecals/Projected"
             // Outside the box, or surface turned away further than the wrap angle: nothing.
             clip(0.5 - abs(IN.decalPos));
             clip(IN.facing - _WrapCos);
+            // Seen from behind the surface (inside a cab looking at the back of its outer wall).
+            clip(IN.viewSide);
 
             // Not TRANSFORM_TEX: it pastes its argument unbracketed, which broke this expression.
             float2 uv = (IN.decalPos.xy + 0.5) * _MainTex_ST.xy + _MainTex_ST.zw;
