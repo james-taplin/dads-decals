@@ -43,13 +43,13 @@ Both effects are procedural, so they work on any image, and each decal gets its 
 
 **Grime** darkens the decal with streaks running down and blotches, like rain-washed dirt.
 - **Grime**: strength. Low values give a few streaks; high values cover most of the decal.
-- **New grime**: re-rolls the pattern.
+- **New grime pattern** (under the Weathering sliders): re-rolls the pattern.
 - **Grime colour**: the colour of the dirt (default dark brown-grey). Try rust brown for old steam locos, or grey for road dust.
 - Dirty areas also lose shine.
 
 **Chipping** removes small flakes of the decal, like paint wearing off.
 - **Chipping**: strength. Higher values mean more and bigger chips.
-- **New chips**: re-rolls the pattern.
+- **New chip pattern** (under the Weathering sliders): re-rolls the pattern.
 
 Both are in real-world units, so a small placard and a large herald get similar-sized streaks and chips.
 

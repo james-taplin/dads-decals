@@ -24,6 +24,7 @@ First stable release. A tidier window layout, plus fixes found while testing it.
 - **Edit lists the tender's decals too.** A steam loco and its tender are separate cars, and the Edit list only showed whichever one you last pointed at, so text on the tender and images on the cab never appeared together. It now lists the car's decals and those on any car coupled to it, each under its own heading.
 - **Colour swatches did nothing** until you'd picked from the screen: the hex box wrote its old value back over the click whenever any text box had focus.
 - **Button labels were cut off** at both ends: fixed-width buttons were too narrow for the game's font. They now fit their text.
+- **Toolbox too narrow**: the Grime and Chipping rows added a sideways scrollbar at the toolbox's default width. **New grime pattern** and **New chip pattern** now sit on their own row under the sliders, and the toolbox opens 460 px wide.
 
 ## [0.3.1] - 2026-10-06 (pre-release)
 

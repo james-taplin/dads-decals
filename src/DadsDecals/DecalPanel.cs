@@ -119,7 +119,7 @@ namespace DadsDecals
             if (!settingsPlaced && main != null && main.WindowRect.HasValue && (!w.WindowRect.HasValue || w.WindowRect.Value.position == main.WindowRect.Value.position))
             {
                 var m = main.WindowRect.Value;
-                w.Position(new Rect(m.xMax + 8f, m.y, w.WindowRect?.width ?? 400f, w.WindowRect?.height ?? 600f));
+                w.Position(new Rect(m.xMax + 8f, m.y, w.WindowRect?.width ?? 460f, w.WindowRect?.height ?? 600f));
             }
             settingsPlaced = true;
             w.Show();
@@ -425,14 +425,13 @@ namespace DadsDecals
 
             if (Section("style.weathering", "Weathering"))
             {
-                GUILayout.BeginHorizontal();
                 d.Grime = Slider(id + ".grime", "Grime", d.Grime, 0f, 1f, 0f, "%", 100f, "0");
-                if (GUILayout.Button("New grime", Fit)) { d.GrimeSeed = UnityEngine.Random.Range(0f, 100f); GUI.changed = true; }
-                GUILayout.EndHorizontal();
                 ColourField("Grime colour", id + ".grime", d.GrimeColor);
-                GUILayout.BeginHorizontal();
                 d.Chipping = Slider(id + ".chip", "Chipping", d.Chipping, 0f, 1f, 0f, "%", 100f, "0");
-                if (GUILayout.Button("New chips", Fit)) { d.ChipSeed = UnityEngine.Random.Range(0f, 100f); GUI.changed = true; }
+                // On their own row: beside the sliders they made the toolbox too wide for its default size.
+                GUILayout.BeginHorizontal();
+                if (GUILayout.Button("New grime pattern")) { d.GrimeSeed = UnityEngine.Random.Range(0f, 100f); GUI.changed = true; }
+                if (GUILayout.Button("New chip pattern")) { d.ChipSeed = UnityEngine.Random.Range(0f, 100f); GUI.changed = true; }
                 GUILayout.EndHorizontal();
             }
 
