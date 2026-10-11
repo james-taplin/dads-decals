@@ -67,7 +67,6 @@ namespace DadsDecals
             var car = CurrentCar;
             var layout = car != null ? Main.Layouts.Get(car.CarGUID) : null;
             TrackGesture(layout);
-            LogClick("main");
 
             // Solid background (the Toolbar window itself is see-through), at least as tall as the window.
             GUILayout.BeginVertical(panelStyle, GUILayout.MinHeight(Mathf.Max(100f, rect.height - 40f)));
@@ -88,16 +87,6 @@ namespace DadsDecals
             }
             GUILayout.EndVertical();
             SyncSettingsWindow();
-        }
-
-        // TEMP (0.3.2 testing): trace clicks to find thumbnails that sometimes ignore them.
-        private static void LogClick(string window)
-        {
-            var e = Event.current;
-            if (e.type != EventType.MouseDown && e.type != EventType.MouseUp) return;
-            Main.Log.Log($"[click] {window} {e.type} b{e.button} at {e.mousePosition:F0} hot={GUIUtility.hotControl} kb={GUIUtility.keyboardControl} " +
-                         $"focus='{GUI.GetNameOfFocusedControl()}' mode={I.Mode} image={I.Template.Image} kind={I.Template.Kind} " +
-                         $"toolbox={(PanelWindows.Settings != null && PanelWindows.Settings.Visible ? PanelWindows.Settings.WindowRect?.ToString() : "hidden")} main={PanelWindows.Main?.WindowRect}");
         }
 
         /// <summary>One undo step per slider drag / text edit on the selected decal (each window gets its own events).</summary>
@@ -155,7 +144,6 @@ namespace DadsDecals
             var car = CurrentCar;
             var layout = car != null ? Main.Layouts.Get(car.CarGUID) : null;
             TrackGesture(layout);
-            LogClick("toolbox");
             GUILayout.BeginVertical(panelStyle, GUILayout.MinHeight(Mathf.Max(100f, rect.height - 40f)));
 
             var sel = I.Selected;
@@ -327,7 +315,6 @@ namespace DadsDecals
                         var selected = I.Mode == ToolMode.Place && I.Template.Kind == DecalKind.Image && I.Template.Image == img.Key;
                         if (GUILayout.Toggle(selected, new GUIContent(img.Texture, img.Name), "Button", GUILayout.Width(ThumbSize), GUILayout.Height(ThumbSize)) != selected)
                         {
-                            Main.Log.Log($"[click] thumbnail {img.Key} {(selected ? "stop" : "start")} placing");
                             if (selected) I.StopPlacing();
                             else
                             {
