@@ -2,6 +2,14 @@
 
 All notable changes to Dad's Decals. Versions follow [semantic versioning](https://semver.org/); dates are YYYY-MM-DD.
 
+## [0.4.0] - unreleased (in development on the `interiors` branch)
+
+### Added
+- **Decals in the cab.** Place decals on cab interior walls, ceilings, backheads and dashes. Point at them from inside the cab with the panel open, as you would outside. They come back when you walk away and return (DV loads the interior only when you're near), and they're saved with the car like any other decal.
+- Cab decals also show on the low-detail cab you see through the windows from outside.
+- Levers, valves, switches, doors and gauges are left out, so a decal doesn't stay behind while the part moves through it.
+- Diagnostics report the cab interior: whether it's loaded and how many parts can take decals.
+
 ## [0.3.3] - 2026-10-11
 
 ### Fixed

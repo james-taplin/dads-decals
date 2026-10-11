@@ -130,14 +130,15 @@ Goal: place decals on cab interior faces (walls, ceiling, backhead, dash), and t
 - Targets are gathered once from the car's own hierarchy, and the interior isn't in it.
 - Anchors are paths relative to the car, and there's no way to say "relative to the interior root".
 
-### Plan
-1. **Aim:** use `TrainCar.Resolve` in `RaycastAnyCar`, so interior colliders count as the car.
-2. **Anchor:** a new anchor form, `interior:<path under TrainCar.interior>`, resolved via `car.interior`. Decals placed on a hit under `interior` use it. If the path is missing (interior not loaded), the decal isn't drawn and stays in the layout.
-3. **Targets:** `DecalRenderer` subscribes to `InteriorLoaded` and `ExternalInteractableLoaded` and calls `RefreshTargets()`, which also walks `car.interior` when it's loaded. Unsubscribe in `OnDestroy`.
-4. **Moving parts:** leave out renderers under cab controls (levers, valves, buttons, gauges' needles). First pass: skip anything under a `ControlImplBase` or with a rigidbody. Later, optionally, anchor to a part so a decal on a door or lever moves with it (a "This part" attachment).
+### Plan (as built on the `interiors` branch, 2026-10-12)
+1. **Aim:** `RaycastAnyCar` uses `TrainCar.Resolve`, so interior colliders count as the car.
+2. **No new anchor.** The interior is lined up with the body, so interior decals are ordinary **body** decals: no data-format change, and templates, copy-from and multiplayer carry them as they are. (The first draft had an `interior:` anchor; dropped.) Because `car.interior` can trail the body by a frame at speed, each interior part is drawn with the decal box placed in the *interior's* frame (`interior.localToWorldMatrix * local`), and `Pose` measures interior hits against `car.interior` (`DecalTargets.FrameFor`). So body decals can reach interior parts and the other way round; the facing test and the first-surface depth image keep each on its own side of the wall.
+3. **Targets:** `DecalTargets.Find` also walks `car.interior` (anchor = `car.interior`); `[interior LOD]` is no longer excluded. `DecalRenderer` listens to `InteriorLoaded` and `ExternalInteractableLoaded` and refreshes targets a frame later (unloaded objects are destroyed at the end of the frame).
+4. **Moving parts:** renderers under a `DV.CabControls.ControlImplBase` or an `Indicator` (gauges) are left out. (Not rigidbodies: the interior's own root may have one.) Later, optionally, anchor to a part so a decal on a door or lever moves with it (a "This part" attachment).
 5. **Seen from inside:** 0.3.3 already hides decals seen from behind their surface, and stops each decal at the first surface it meets (a per-decal depth image, 15 cm slack). Interior decals need that too, or one on a cab wall would also land on seats and pipes behind it; the interior's parts just have to be in the depth image, which happens once they're targets under the same anchor.
-6. **Edit/Layouts:** interior decals list like any other; the status line and Edit list say "(interior)". Templates and copy-from carry them across cars of the same type.
-7. **Optional:** also draw interior decals on `[interior LOD]` when the full interior isn't loaded, so they're visible through the windows from outside. Its meshes are much coarser, so this may look off; try it and decide.
+6. **Edit/Layouts:** interior decals list like any other. Templates and copy-from carry them across cars of the same type.
+7. **`[interior LOD]`** is a target (anchor: body), so cab decals show through the windows from outside while the full interior isn't loaded. Its meshes are coarser; check it looks acceptable.
+8. **Open:** cab walls without colliders can't be aimed at (Unity rays don't hit a box collider from inside). If that's common, fall back to a ray against the interior meshes' bounds, or aim through the exterior collider's far side.
 
 ### Test plan
 - S282 and DE2 cabs: place on a wall, the backhead and the ceiling; walk away until the interior unloads, come back: still there.
