@@ -98,6 +98,7 @@ namespace DadsDecals
 
         public void Select(TrainCar car, DecalPlacement d)
         {
+            if (Sync.ReadOnly) return;   // guests can't edit (0.4.0-alpha.1), so nothing to select
             SelectedCar = car;
             Selected = d;
             Car = car;
