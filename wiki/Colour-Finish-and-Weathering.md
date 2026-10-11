@@ -1,6 +1,6 @@
 # Colour, finish and weathering
 
-![The Decal toolbox for a selected text decal: Size and placement, Colour, Finish and Weathering](../docs/images/gui-settings.png)
+![The Decal toolbox for a selected text decal ("72V SUPPLY" beside the warning sign): Size and placement, Colour, Finish and Weathering](../docs/images/gui-settings.png)
 
 These sections are in the **Decal toolbox** window, which pops out beside the main window: for the next decal while you're placing, and for the selected decal while you're editing.
 

@@ -27,7 +27,7 @@ Placing pauses whenever the Decals window isn't on screen: when you lock the mou
 
 While placing, the status line at the top of the panel says what you're placing, whether the mouse is over a car, and the controls. If the preview doesn't appear, the **Debug** tab's **Aiming at:** line shows what the mouse is hitting and how many parts the preview is drawn on (see [FAQ](FAQ-and-Troubleshooting.md)).
 
-![Placing mode: the status line shows what you're placing and which car the mouse is over](../docs/images/gui-placing-preview.png)
+![Placing mode: the status line shows what you're placing and which car the mouse is over, and the herald previews on the tender](../docs/images/gui-placing-preview.png)
 
 ## Placement options
 These sit just above the palette:
