@@ -7,8 +7,8 @@ using MPAPI.Interfaces;
 namespace DadsDecals.Multiplayer
 {
     /// <summary>
-    /// Pre-0.4 Dad's Decals has no multiplayer-compatibility key, so Multiplayer treats it as
-    /// required and refuses a guest who has it when the host (0.4+, marked "Client") doesn't list
+    /// Pre-0.5 Dad's Decals has no multiplayer-compatibility key, so Multiplayer treats it as
+    /// required and refuses a guest who has it when the host (0.5+, marked "Client") doesn't list
     /// it. Multiplayer compares mod names only. This lets such guests in anyway, then whispers a
     /// polite note that their version isn't supported in multiplayer.
     ///
@@ -27,7 +27,7 @@ namespace DadsDecals.Multiplayer
             try
             {
                 var method = AccessTools.Method(AccessTools.TypeByName(TargetType), "ValidateClientMods");
-                if (method == null) { Sync.Log("Old-version check unavailable (Multiplayer changed); pre-0.4 guests get Multiplayer's usual message"); return; }
+                if (method == null) { Sync.Log("Old-version check unavailable (Multiplayer changed); pre-0.5 guests get Multiplayer's usual message"); return; }
                 new Harmony(Main.Mod.Info.Id + ".multiplayer").Patch(method, postfix: new HarmonyMethod(typeof(OldVersions), nameof(Postfix)));
             }
             catch (Exception e)
@@ -49,7 +49,7 @@ namespace DadsDecals.Multiplayer
                     var t = Traverse.Create(mod);
                     if (t.Field("Id").GetValue<string>() != Main.Mod.Info.Id) continue;
                     var version = t.Field("Version").GetValue<string>() ?? "";
-                    if (IsBefore04(version)) oldVersion = version;
+                    if (IsBefore05(version)) oldVersion = version;
                 }
                 if (oldVersion == null) return;
 
@@ -62,7 +62,7 @@ namespace DadsDecals.Multiplayer
                 result.Property("IsValid").SetValue(missing.Count == 0 && extra.Count == 0);
 
                 pending.Enqueue(oldVersion);
-                Sync.Log($"Letting in a guest with Dad's Decals {oldVersion} (pre-0.4, no sync); they'll get a note once they've loaded");
+                Sync.Log($"Letting in a guest with Dad's Decals {oldVersion} (pre-0.5, no sync); they'll get a note once they've loaded");
             }
             catch (Exception e)
             {
@@ -71,7 +71,7 @@ namespace DadsDecals.Multiplayer
         }
 
         /// <summary>
-        /// Ten seconds after a guest finishes loading: if they never said hello but a pre-0.4 guest
+        /// Ten seconds after a guest finishes loading: if they never said hello but a pre-0.5 guest
         /// was let in, tell them. (If two people join at the same moment the note could reach the
         /// wrong one of them; it's harmless.)
         /// </summary>
@@ -80,16 +80,16 @@ namespace DadsDecals.Multiplayer
             if (server == null || pending.Count == 0 || helloed.Contains(player.PlayerId)) return;
             var version = pending.Dequeue();
             server.SendWhisperChatMessage(
-                $"Hi {player.DisplayName}! You're running Dad's Decals {version}, and versions before 0.4 aren't supported in multiplayer, " +
-                "so you won't see decals on this server. Updating to 0.4 or newer will fix that. Sorry for the hassle!", player);
+                $"Hi {player.DisplayName}! You're running Dad's Decals {version}, and versions before 0.5 aren't supported in multiplayer, " +
+                "so you won't see decals on this server. Updating to 0.5 or newer will fix that. Sorry for the hassle!", player);
             Sync.Log($"Told {player.Username} that Dad's Decals {version} isn't supported in multiplayer");
         }
 
-        private static bool IsBefore04(string version)
+        private static bool IsBefore05(string version)
         {
             var parts = version.Split('.', '-');
             if (parts.Length < 2 || !int.TryParse(parts[0], out var major) || !int.TryParse(parts[1], out var minor)) return false;
-            return major == 0 && minor < 4;
+            return major == 0 && minor < 5;
         }
     }
 }

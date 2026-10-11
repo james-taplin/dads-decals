@@ -3,7 +3,7 @@
 $ErrorActionPreference = "Stop"
 $repo = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $src = Join-Path $repo "src\DadsDecals"
-# Zip name: the full version from the csproj (e.g. 0.4.0-alpha.1); info.json holds the plain number UMM reads.
+# Zip name: the full version from the csproj (e.g. 0.5.0-alpha.1); info.json holds the plain number UMM reads.
 $version = [regex]::Match((Get-Content (Join-Path $src "DadsDecals.csproj") -Raw), '<Version>([^<]+)</Version>').Groups[1].Value
 if (-not $version) { throw "No <Version> in DadsDecals.csproj" }
 

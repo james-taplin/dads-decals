@@ -52,7 +52,8 @@ We use **GPU projection**, the same technique Conformal Decals uses. Our shader 
 5. ✅ **Persistence:** layouts saved in the save game, reapplied on spawn, orphans kept.
 6. ✅ **v0.2: the feature set below (groups 1–4).** Built 2026-10-06 and tested in game; published as the 0.2.0 pre-release, then 0.3.0 with the mirrored-parts and pause fixes.
 7. **Later (group 5):** VR placement via CommsRadioAPI, distance culling for long trains.
-8. **v0.4: multiplayer sync** (planned, not started). See the section below.
+8. **v0.4: interior decals** (researched 2026-10-11, not started). See the section below.
+9. **v0.5: multiplayer sync** (in development on the `multiplayer` branch; moved from v0.4 on 2026-10-11). See the section below.
 
 ## v0.2 feature plan (agreed 2026-10-06)
 
@@ -115,7 +116,38 @@ The panel gets tabs: **Place | Edit | Layouts | Debug**. Shared controls (size, 
 
 Each step is built, committed, and installed when the game is closed.
 
-## v0.4 plan: multiplayer sync (planned 2026-10-06; development on the `multiplayer` branch)
+## v0.4 plan: interior decals (research 2026-10-11)
+Goal: place decals on cab interior faces (walls, ceiling, backhead, dash), and they stay put when the interior unloads and reloads.
+
+### How DV builds interiors (Assembly-CSharp, `TrainCar`)
+- **Separate root object.** `SetupInterior()` creates `"<car> [interior]"` with `SetParent(null)`: a top-level object that follows the car (DOTS `CopyTransformFromGameObjectLateUpdate`), **not** a child of it. `TrainCar.interior` points to it.
+- **Loaded on demand.** `LoadInterior()` instantiates `carLivery.interiorPrefab` under `interior` when you get near, and hides the car's `[interior LOD]` child while it's loaded. `UnloadInterior()` destroys it and shows the LOD again. Events: `InteriorLoaded(GameObject)` (null on unload), `InteriorAboutToBeUnloaded`, and `ExternalInteractableLoaded` for the outside handles/doors, which are also instantiated under `interior`.
+- **Finding the car from a hit:** `TrainCar.Resolve(GameObject)` checks `GetComponentInParent<TrainCar>()`, then `TrainCarInteriorObject.actualTrainCar`. Our `RaycastAnyCar` only does the first, so interior hits are currently ignored.
+- **Paint:** the loaded interior has its own `TrainCarPaint`s (`paintCabExterior`, `paintCabInterior`); reskins can swap interior materials too.
+
+### Why it doesn't work today
+- `DecalTargets.IsExcluded` skips any path containing `[interior`, which covers both `[interior LOD]` and the loaded interior.
+- Targets are gathered once from the car's own hierarchy, and the interior isn't in it.
+- Anchors are paths relative to the car, and there's no way to say "relative to the interior root".
+
+### Plan
+1. **Aim:** use `TrainCar.Resolve` in `RaycastAnyCar`, so interior colliders count as the car.
+2. **Anchor:** a new anchor form, `interior:<path under TrainCar.interior>`, resolved via `car.interior`. Decals placed on a hit under `interior` use it. If the path is missing (interior not loaded), the decal isn't drawn and stays in the layout.
+3. **Targets:** `DecalRenderer` subscribes to `InteriorLoaded` and `ExternalInteractableLoaded` and calls `RefreshTargets()`, which also walks `car.interior` when it's loaded. Unsubscribe in `OnDestroy`.
+4. **Moving parts:** leave out renderers under cab controls (levers, valves, buttons, gauges' needles). First pass: skip anything under a `ControlImplBase` or with a rigidbody. Later, optionally, anchor to a part so a decal on a door or lever moves with it (a "This part" attachment).
+5. **Seen from inside:** the 0.3.3 camera-side clip already hides decals on the back of outer walls; interior faces face the camera, so they draw normally.
+6. **Edit/Layouts:** interior decals list like any other; the status line and Edit list say "(interior)". Templates and copy-from carry them across cars of the same type.
+7. **Optional:** also draw interior decals on `[interior LOD]` when the full interior isn't loaded, so they're visible through the windows from outside. Its meshes are much coarser, so this may look off; try it and decide.
+
+### Test plan
+- S282 and DE2 cabs: place on a wall, the backhead and the ceiling; walk away until the interior unloads, come back: still there.
+- Save, quit and reload; jump/teleport away and back.
+- A CCL loco with a custom interior (5AT).
+- Reskin with an interior theme: decals survive the material swap.
+- Levers and the regulator: no decal smeared across them while they move.
+- Performance readout with the interior loaded vs not.
+
+## v0.5 plan: multiplayer sync (planned 2026-10-06 as v0.4, moved to v0.5 on 2026-10-11; development on the `multiplayer` branch)
 Goal: everyone in a multiplayer session sees the same decals, and players **without** Dad's Decals can still join (they just don't see them).
 
 ### What we'd build on
@@ -248,15 +280,15 @@ Images go both ways: the host also asks a guest for any PNG the guest used that 
 
 ### Milestones
 1. **0.3.1:** the `info.json` compatibility key only. Players with and without Dad's Decals can join each other; decals stay local.
-2. **0.4.0-alpha.1:**
+2. **0.5.0-alpha.1:**
    - bridge isolation;
    - data format v3;
    - `Hello`/`Welcome`;
    - host snapshot for text decals and the shipped example images (no image transfer yet).
-3. **0.4.0-alpha.2:** image hashing, request/chunk transfer, and the cache folder.
-4. **0.4.0-alpha.3:** client edits through the host, versions, and rejection handling.
-5. **0.4.0-beta:** moderation settings, chat commands, placed-by, and per-player hide.
-6. **0.4.0:**
+3. **0.5.0-alpha.2:** image hashing, request/chunk transfer, and the cache folder.
+4. **0.5.0-alpha.3:** client edits through the host, versions, and rejection handling.
+5. **0.5.0-beta:** moderation settings, chat commands, placed-by, and per-player hide.
+6. **0.5.0:**
    - a panel status line: Offline / Hosting (n players with Dad's Decals) / Connected / Local only;
    - a wiki page.
 
@@ -272,23 +304,23 @@ Images go both ways: the host also asks a guest for any PNG the guest used that 
   - moderation lock and clear;
   - the host saves, quits and reloads, and everything guests placed is still there.
 
-### Older versions (decided 2026-10-06: pre-0.4 is unsupported, say so politely)
-- **How Multiplayer checks mods:** at login, `ValidateClientMods` compares mod **names only, not versions** (`NetworkServer.cs`, around line 1207). Pre-0.4 Dad's Decals has no compatibility key, so it counts as required. 0.4 marks itself `Client`, so it drops out of the list.
-- **Pre-0.4 player joining a 0.4+ host:**
+### Older versions (decided 2026-10-06: pre-0.5 is unsupported, say so politely)
+- **How Multiplayer checks mods:** at login, `ValidateClientMods` compares mod **names only, not versions** (`NetworkServer.cs`, around line 1207). Pre-0.5 Dad's Decals has no compatibility key, so it counts as required. 0.5 marks itself `Client`, so it drops out of the list.
+- **Pre-0.5 player joining a 0.5+ host:**
   - Left alone, Multiplayer would refuse them with its generic "mod mismatch" message.
-  - Instead, the host patches `ModCompatibilityManager.ValidateClientMods` with a Harmony prefix. The prefix removes `DadsDecals` from the client's list when its version is below 0.4 and notes the version, so they can join.
-  - When that player is ready and hasn't sent `Hello` within 10 s, the host whispers to them: *"Hi {name}! You're running Dad's Decals {version}, and versions before 0.4 aren't supported in multiplayer, so you won't see decals on this server. Updating to 0.4 or newer will fix that. Sorry for the hassle!"*
+  - Instead, the host patches `ModCompatibilityManager.ValidateClientMods` with a Harmony prefix. The prefix removes `DadsDecals` from the client's list when its version is below 0.5 and notes the version, so they can join.
+  - When that player is ready and hasn't sent `Hello` within 10 s, the host whispers to them: *"Hi {name}! You're running Dad's Decals {version}, and versions before 0.5 aren't supported in multiplayer, so you won't see decals on this server. Updating to 0.5 or newer will fix that. Sorry for the hassle!"*
   - If the patch target ever changes, the prefix fails safe: Multiplayer's own message shows as before.
-- **0.4+ player joining a pre-0.4 host:** the old host requires Dad's Decals, and Multiplayer refuses the join. The 0.4 client can't change that. The wiki says hosts need 0.4 or newer, and the client logs a hint.
-- **Future protocol mismatch (0.4 vs 0.5…):** `Welcome` carries the protocol version. A client that can't speak it goes local-only, and its panel shows: *"This server's Dad's Decals ({version}) uses a different multiplayer version from yours. Decals you place stay on your screen only. Matching versions will fix that."*
+- **0.5+ player joining a pre-0.5 host:** the old host requires Dad's Decals, and Multiplayer refuses the join. The 0.5 client can't change that. The wiki says hosts need 0.5 or newer, and the client logs a hint.
+- **Future protocol mismatch (0.5 vs 0.6…):** `Welcome` carries the protocol version. A client that can't speak it goes local-only, and its panel shows: *"This server's Dad's Decals ({version}) uses a different multiplayer version from yours. Decals you place stay on your screen only. Matching versions will fix that."*
 
 ### Testing (decided 2026-10-06)
 - No second PC. The user's friend plays online and may test with her group.
 - So:
   - single-player checks happen here;
-  - multiplayer builds go to the testers as tagged `0.4.0-alpha.N` pre-releases from this branch;
+  - multiplayer builds go to the testers as tagged `0.5.0-alpha.N` pre-releases from this branch;
   - each comes with a short checklist and a Debug-tab "multiplayer log", so testers can send back one file.
 
 ## Open questions
 - Does the game's exterior camera also zoom on the mouse wheel? If so, Ctrl/Shift+wheel may need different modifiers.
-- Interior (cab) decals: exterior first.
+- Interior (cab) decals: planned for v0.4, see above.

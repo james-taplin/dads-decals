@@ -16,7 +16,7 @@ namespace DadsDecals
         Offline,
         /// <summary>Hosting a multiplayer game: our layouts are the authority and get sent to guests.</summary>
         Host,
-        /// <summary>A guest of a host running Dad's Decals 0.4+: we show the host's layouts.</summary>
+        /// <summary>A guest of a host running Dad's Decals 0.5+: we show the host's layouts.</summary>
         Client,
         /// <summary>A guest whose host has no (or an incompatible) Dad's Decals: decals stay on this screen.</summary>
         LocalOnly,
@@ -47,7 +47,7 @@ namespace DadsDecals
             }
         }
 
-        /// <summary>Guests can't place or edit yet (0.4.0-alpha.1): they see the host's decals.</summary>
+        /// <summary>Guests can't place or edit yet (0.5.0-alpha.1): they see the host's decals.</summary>
         public static bool ReadOnly => Role == SyncRole.Client;
 
         /// <summary>Set by the bridge while hosting: send one car's layout to every guest that said hello.</summary>
@@ -163,7 +163,7 @@ namespace DadsDecals
 
         // ---- guest side -----------------------------------------------------------------------
 
-        /// <summary>Images this guest is missing (key -> hash). Image transfer arrives in 0.4.0-alpha.2.</summary>
+        /// <summary>Images this guest is missing (key -> hash). Image transfer arrives in 0.5.0-alpha.2.</summary>
         public static readonly Dictionary<string, string> MissingImages = new Dictionary<string, string>();
 
         /// <summary>About to say hello to a host: forget whatever was loaded locally; the host's layouts follow.</summary>

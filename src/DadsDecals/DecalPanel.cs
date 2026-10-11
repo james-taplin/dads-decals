@@ -84,7 +84,7 @@ namespace DadsDecals
             if (Sync.Role != SyncRole.Offline && Sync.Status.Length > 0)
                 GUILayout.Label("Multiplayer: " + Sync.Status);
 
-            // 0.4.0-alpha.1: guests see the host's decals but can't change them yet.
+            // 0.5.0-alpha.1: guests see the host's decals but can't change them yet.
             if (Sync.ReadOnly && tab != 3)
             {
                 GUILayout.Label("You're a guest in this game, so you're seeing the host's decals. " +
