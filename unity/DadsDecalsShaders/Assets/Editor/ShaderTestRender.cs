@@ -85,6 +85,26 @@ public static class ShaderTestRender
             else mpb.SetVector(parts[0].Trim(), new Vector4(nums[0], nums[1], nums[2], nums.Length > 3 ? nums[3] : 1));
         }
 
+        // DADSDECALS_TEST_FIRSTSURFACE=1: the mod's first-surface depth image over boiler and cab.
+        if (System.Environment.GetEnvironmentVariable("DADSDECALS_TEST_FIRSTSURFACE") == "1")
+        {
+            var rt = new RenderTexture(128, 128, 0, RenderTextureFormat.RHalf) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
+            rt.Create();
+            var depthMat = new Material(AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/DadsDecalDepth.shader"));
+            var props = new MaterialPropertyBlock();
+            var cmd = new UnityEngine.Rendering.CommandBuffer();
+            cmd.SetRenderTarget(rt);
+            cmd.ClearRenderTarget(false, true, Color.white);
+            foreach (var target in new[] { boiler, cab })
+            {
+                props.SetMatrix("_ObjectToDecal", toWorld.inverse * target.transform.localToWorldMatrix);
+                cmd.DrawMesh(target.GetComponent<MeshFilter>().sharedMesh, target.transform.localToWorldMatrix, depthMat, 0, 0, props);
+            }
+            Graphics.ExecuteCommandBuffer(cmd);
+            mpb.SetTexture("_FirstSurface", rt);
+            mpb.SetFloat("_SurfaceTolerance", 0.15f / 0.6f);
+        }
+
         // DADSDECALS_TEST_LAYERS="qa,qb": a second, overlapping decal (hazard stripe) for layering.
         // The herald draws at queue qa, the stripe at qb, and the stripe is submitted FIRST, so the
         // result shows queue order winning over submission order.
@@ -144,6 +164,139 @@ public static class ShaderTestRender
             RenderTexture.active = null;
             cam.targetTexture = null;
             Object.DestroyImmediate(rt);
+        }
+
+        Object.DestroyImmediate(root);
+        Debug.Log("DADSDECALS_TEST_OK");
+    }
+
+    private static float Probe(RenderTexture rt, int x, int y)
+    {
+        var copy = RenderTexture.GetTemporary(rt.width, rt.height, 0, RenderTextureFormat.ARGBFloat);
+        Graphics.Blit(rt, copy);
+        RenderTexture.active = copy;
+        var t = new Texture2D(rt.width, rt.height, TextureFormat.RGBAFloat, false);
+        t.ReadPixels(new Rect(0, 0, rt.width, rt.height), 0, 0);
+        RenderTexture.active = null;
+        RenderTexture.ReleaseTemporary(copy);
+        return t.GetPixel(x, y).r;
+    }
+
+    // A hollow cab: a near wall with the decal on its outside and a far wall whose inside faces the
+    // decal, both inside a deep decal box. Renders from outside and from inside the cab, with the
+    // mod's first-surface depth image (as DecalRenderer.RenderFirstSurface) unless
+    // DADSDECALS_TEST_FIRSTSURFACE=0. Writes TestRenders/<tag>outside.png and <tag>inside.png.
+    //   Unity.exe -quit -projectPath <this project> -executeMethod ShaderTestRender.RunFarWall -logFile <log>
+    public static void RunFarWall()
+    {
+        var shader = AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/DadsDecal.shader");
+        var depthShader = AssetDatabase.LoadAssetAtPath<Shader>("Assets/Shaders/DadsDecalDepth.shader");
+        var tex = new Texture2D(2, 2);
+        tex.LoadImage(File.ReadAllBytes("../../examples/Decals/Logos/DVRT herald.png"));
+        tex.wrapMode = TextureWrapMode.Clamp;
+
+        var root = new GameObject("TestRoot");
+        var light = new GameObject("Sun").AddComponent<Light>();
+        light.type = LightType.Directional;
+        light.transform.rotation = Quaternion.Euler(40, 20, 0);
+        light.transform.parent = root.transform;
+        var grey = new Material(Shader.Find("Standard")) { color = new Color(0.6f, 0.6f, 0.65f) };
+
+        GameObject Wall(float z)
+        {
+            var w = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            w.transform.SetParent(root.transform);
+            w.transform.position = new Vector3(0, 1.5f, z);
+            w.transform.localScale = new Vector3(3f, 2.5f, 0.05f);
+            w.GetComponent<Renderer>().sharedMaterial = grey;
+            return w;
+        }
+        var near = Wall(-0.8f);
+        near.name = "near";   // outer face at z = -0.825, the decal goes here
+        var far = Wall(0.7f);
+        far.name = "far";     // inner face at z = 0.675 faces the decal
+
+        // Decal as the mod places it: box from 0.25 m outside the hit to (depth - 0.25) inside, depth 2 m.
+        const float depth = 2f, margin = 0.25f;
+        var hit = new Vector3(0, 1.5f, -0.825f);
+        var toWorld = Matrix4x4.TRS(hit + Vector3.forward * (depth * 0.5f - margin), Quaternion.identity, new Vector3(1.2f, 1.2f, depth));
+        var decalMat = new Material(shader) { mainTexture = tex };
+        var mpb = new MaterialPropertyBlock();
+        mpb.SetMatrix("_WorldToDecal", toWorld.inverse);
+        mpb.SetVector("_DecalForward", Vector3.forward);
+        mpb.SetFloat("_WrapCos", Mathf.Cos(75 * Mathf.Deg2Rad));
+        mpb.SetVector("_DecalSize", new Vector4(1.2f, 1.2f, 0, 0));
+        mpb.SetFloat("_SurfaceTolerance", 0.15f / depth);
+
+        if (System.Environment.GetEnvironmentVariable("DADSDECALS_TEST_FIRSTSURFACE") != "0")
+        {
+            var rt = new RenderTexture(128, 128, 0, RenderTextureFormat.RHalf) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
+            rt.Create();
+            var depthMat = new Material(depthShader);
+            var props = new MaterialPropertyBlock();
+            props.SetMatrix("_WorldToDecal", toWorld.inverse);
+            var cmd = new UnityEngine.Rendering.CommandBuffer();
+            cmd.SetRenderTarget(rt);
+            cmd.ClearRenderTarget(false, true, Color.white);
+            foreach (var w in new[] { near, far })
+            {
+                props.SetMatrix("_ObjectToDecal", toWorld.inverse * w.transform.localToWorldMatrix);
+                cmd.DrawMesh(w.GetComponent<MeshFilter>().sharedMesh, w.transform.localToWorldMatrix, depthMat, 0, 0, props);
+            }
+            Graphics.ExecuteCommandBuffer(cmd);
+            mpb.SetTexture("_FirstSurface", rt);
+            // Readback for the log: centre and a corner texel (expect ~0.125 = near wall, inside the box).
+            Debug.Log($"DADSDECALS_FIRSTSURFACE centre={Probe(rt, 64, 64):0.0000} corner={Probe(rt, 2, 2):0.0000} (expect 0.1250)");
+            // Each wall alone: near outer face 0.1250, far wall's near (inner) face 0.8750.
+            foreach (var w in new[] { near, far })
+            {
+                var c2 = new UnityEngine.Rendering.CommandBuffer();
+                c2.SetRenderTarget(rt);
+                c2.ClearRenderTarget(false, true, Color.white);
+                props.SetMatrix("_ObjectToDecal", toWorld.inverse * w.transform.localToWorldMatrix);
+                c2.DrawMesh(w.GetComponent<MeshFilter>().sharedMesh, w.transform.localToWorldMatrix, depthMat, 0, 0, props);
+                Graphics.ExecuteCommandBuffer(c2);
+                Debug.Log($"DADSDECALS_FIRSTSURFACE {w.name}: {Probe(rt, 64, 64):0.0000}");
+            }
+            cmd.Clear();
+            cmd.SetRenderTarget(rt);
+            cmd.ClearRenderTarget(false, true, Color.white);
+            foreach (var w in new[] { near, far })
+            {
+                props.SetMatrix("_ObjectToDecal", toWorld.inverse * w.transform.localToWorldMatrix);
+                cmd.DrawMesh(w.GetComponent<MeshFilter>().sharedMesh, w.transform.localToWorldMatrix, depthMat, 0, 0, props);
+            }
+            Graphics.ExecuteCommandBuffer(cmd);
+        }
+
+        var cam = new GameObject("Cam").AddComponent<Camera>();
+        cam.transform.SetParent(root.transform);
+        cam.allowHDR = true;
+        cam.renderingPath = RenderingPath.DeferredShading;
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = new Color(0.5f, 0.6f, 0.7f);
+        cam.fieldOfView = 70;
+
+        Directory.CreateDirectory("TestRenders");
+        var tag = System.Environment.GetEnvironmentVariable("DADSDECALS_TEST_TAG") ?? "";
+        foreach (var (name, pos) in new[] { ("outside", new Vector3(0.6f, 1.7f, -3.5f)), ("inside", new Vector3(0.3f, 1.6f, -0.5f)) })
+        {
+            cam.transform.position = pos;
+            cam.transform.LookAt(new Vector3(0, 1.5f, name == "outside" ? -0.8f : 0.7f));
+            var target = new RenderTexture(800, 450, 24, RenderTextureFormat.ARGB32);
+            cam.targetTexture = target;
+            foreach (var w in new[] { near, far })
+                Graphics.DrawMesh(w.GetComponent<MeshFilter>().sharedMesh, w.transform.localToWorldMatrix,
+                    decalMat, 0, cam, 0, mpb, UnityEngine.Rendering.ShadowCastingMode.Off, true);
+            cam.Render();
+            RenderTexture.active = target;
+            var outTex = new Texture2D(800, 450, TextureFormat.RGB24, false);
+            outTex.ReadPixels(new Rect(0, 0, 800, 450), 0, 0);
+            outTex.Apply();
+            File.WriteAllBytes($"TestRenders/{tag}{name}.png", outTex.EncodeToPNG());
+            RenderTexture.active = null;
+            cam.targetTexture = null;
+            Object.DestroyImmediate(target);
         }
 
         Object.DestroyImmediate(root);

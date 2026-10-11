@@ -1,6 +1,6 @@
 # FAQ and troubleshooting
 
-## The Decals button isn't on the toolbar
+## The DD button isn't on the toolbar
 - Check **Mod Toolbar** is installed and enabled. Dad's Decals needs it.
 - Open UMM (Ctrl+F10) and check **Dad's Decals** has a green dot. A red `!!!` means it failed to load: see *Reporting a bug* below.
 - The toolbar and its panels only show while the **cursor is free**.
@@ -14,7 +14,9 @@ Open the **Debug** tab and watch its **Aiming at:** line while placing:
 - **Aiming at the car but "preview on 0 part(s)"**: try raising **Projection depth** (Size and placement section). Some custom locos have collision shapes that sit away from the visible body.
 
 ## A decal doesn't reach the surface, or appears on the inside
-Adjust **Projection depth**: higher reaches further into the bodywork. If a decal shows through to an inner surface, lower it, or reduce the **Wrap angle**.
+Adjust **Projection depth**: higher reaches further into the bodywork.
+
+Since 0.3.3 a decal stops at the first surface it meets, so it no longer lands on the inside of the cab's far wall. It still carries on up to 15 cm behind that surface (so handrails and pipes don't cut gaps in it); if it reaches something just behind the panel it's on, lower **Projection depth** or the **Wrap angle**.
 
 ## Parts of letters are cut off
 Fixed in 0.3.1. Older versions cut off descenders (g, j, p, q, y) and the flourishes of script fonts, both in the panel preview and on the car. Text is now cropped to the actual ink, so every font fits. Existing text decals are redrawn automatically; they may come out a touch bigger or smaller than before.

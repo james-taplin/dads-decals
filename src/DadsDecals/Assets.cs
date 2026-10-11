@@ -9,6 +9,7 @@ namespace DadsDecals
         private static AssetBundle? bundle;
         public static Shader? DecalShader { get; private set; }
         public static Shader? TextShader { get; private set; }
+        public static Shader? DepthShader { get; private set; }
 
         public static void Load()
         {
@@ -21,6 +22,7 @@ namespace DadsDecals
             }
             DecalShader = LoadShader("Assets/Shaders/DadsDecal.shader");
             TextShader = LoadShader("Assets/Shaders/DadsTextRender.shader");
+            DepthShader = LoadShader("Assets/Shaders/DadsDecalDepth.shader");
         }
 
         private static Shader? LoadShader(string asset)
@@ -40,6 +42,7 @@ namespace DadsDecals
             bundle = null;
             DecalShader = null;
             TextShader = null;
+            DepthShader = null;
         }
 
         /// <summary>Material and image aspect (width / height) for a decal, image or text.</summary>

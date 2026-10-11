@@ -135,7 +135,7 @@ Goal: place decals on cab interior faces (walls, ceiling, backhead, dash), and t
 2. **Anchor:** a new anchor form, `interior:<path under TrainCar.interior>`, resolved via `car.interior`. Decals placed on a hit under `interior` use it. If the path is missing (interior not loaded), the decal isn't drawn and stays in the layout.
 3. **Targets:** `DecalRenderer` subscribes to `InteriorLoaded` and `ExternalInteractableLoaded` and calls `RefreshTargets()`, which also walks `car.interior` when it's loaded. Unsubscribe in `OnDestroy`.
 4. **Moving parts:** leave out renderers under cab controls (levers, valves, buttons, gauges' needles). First pass: skip anything under a `ControlImplBase` or with a rigidbody. Later, optionally, anchor to a part so a decal on a door or lever moves with it (a "This part" attachment).
-5. **Seen from inside:** the 0.3.3 camera-side clip already hides decals on the back of outer walls; interior faces face the camera, so they draw normally.
+5. **Seen from inside:** 0.3.3 already hides decals seen from behind their surface, and stops each decal at the first surface it meets (a per-decal depth image, 15 cm slack). Interior decals need that too, or one on a cab wall would also land on seats and pipes behind it; the interior's parts just have to be in the depth image, which happens once they're targets under the same anchor.
 6. **Edit/Layouts:** interior decals list like any other; the status line and Edit list say "(interior)". Templates and copy-from carry them across cars of the same type.
 7. **Optional:** also draw interior decals on `[interior LOD]` when the full interior isn't loaded, so they're visible through the windows from outside. Its meshes are much coarser, so this may look off; try it and decide.
 

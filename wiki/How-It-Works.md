@@ -3,12 +3,15 @@
 Technical notes for the curious and for contributors. Design history is in [BRIEF.md](../BRIEF.md) and the research notes in [docs/RESEARCH.md](../docs/RESEARCH.md).
 
 ## Projection (why it works on any car)
-A decal is an oriented box attached to the car body or a bogie. Each frame, for every exterior, full-detail part whose bounds overlap the box, the mod redraws that part's mesh with the decal shader (`Graphics.DrawMesh`, into the view camera only). The shader:
+A decal is an oriented box attached to the car body or a bogie. Each frame, for every exterior part (at every detail level) whose bounds overlap the box, the mod redraws that part's mesh with the decal shader (`Graphics.DrawMesh`, into the view camera only). The shader:
 1. transforms each vertex into the box's space; that position becomes the image coordinate;
 2. throws away pixels outside the box, and pixels facing away beyond the wrap angle;
-3. lights the result with Unity's Standard lighting, then blends it over the paint.
+3. throws away pixels seen from behind their surface, and pixels more than 15 cm behind the *first surface* the decal meets (see below);
+4. lights the result with Unity's Standard lighting, then blends it over the paint.
 
 Because it never reads the mesh on the CPU, it works on meshes that aren't marked readable, which is most custom-loco meshes. That's why loco authors don't need to change anything. The idea is the same one KSP's Conformal Decals uses; Dad's Decals' shader is written from scratch.
+
+**First surface.** A box alone can't tell the outside of a cab wall from the inside of the far wall: both are in the box and both face the decal. So whenever a decal is placed, moved or resized, the mod renders a small depth image (128 px, `RHalf`) of the overlapped parts along the decal's direction, with a command buffer and no camera (`DadsDecalDepth.shader`). It stores, across the decal, how deep the first surface is; the decal shader skips anything more than 15 cm behind it. The slack keeps the decal going on the panel behind a handrail or pipe. Parts are assumed to stay put relative to the decal's anchor, so the image is only redone when the decal or the car's parts change.
 
 The shader sits in render queue 2499, the last opaque slot. Unity only gives shadows to queues up to 2500, and opaque queues draw before screen-space fog and before transparent effects like smoke. So decals get shadows and fog like the paint under them, and smoke passes in front of them.
 

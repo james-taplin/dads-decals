@@ -18,7 +18,7 @@ public static class BuildBundle
             new AssetBundleBuild
             {
                 assetBundleName = "dadsdecals",
-                assetNames = new[] { "Assets/Shaders/DadsDecal.shader", "Assets/Shaders/DadsTextRender.shader" },
+                assetNames = new[] { "Assets/Shaders/DadsDecal.shader", "Assets/Shaders/DadsTextRender.shader", "Assets/Shaders/DadsDecalDepth.shader" },
             },
         };
         var manifest = BuildPipeline.BuildAssetBundles(OutDir, builds, BuildAssetBundleOptions.ChunkBasedCompression, BuildTarget.StandaloneWindows64);

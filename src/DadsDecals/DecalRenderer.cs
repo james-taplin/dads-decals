@@ -30,6 +30,19 @@ namespace DadsDecals
         private static readonly int ChipSeedId = Shader.PropertyToID("_ChipSeed");
         private static readonly int GlowId = Shader.PropertyToID("_Glow");
         private static readonly int HighlightId = Shader.PropertyToID("_Highlight");
+        private static readonly int FirstSurfaceId = Shader.PropertyToID("_FirstSurface");
+        private static readonly int SurfaceToleranceId = Shader.PropertyToID("_SurfaceTolerance");
+        private static readonly int ObjectToDecalId = Shader.PropertyToID("_ObjectToDecal");
+
+        // First surface: a small depth image of the parts, seen along the decal's direction, so the
+        // decal stops at the first surface it meets instead of landing on everything in its box
+        // that faces it (like the inside of a cab's far wall). The tolerance lets it carry on a
+        // little past that surface, so a handrail in front doesn't cut a gap in the decal behind it.
+        private const int FirstSurfaceResolution = 128;
+        private const float SurfaceTolerance = 0.15f;   // metres
+        private static Material? depthMaterial;
+        private static CommandBuffer? depthCommands;
+        private static MaterialPropertyBlock? depthProperties;
 
 
         private TrainCar car = null!;
@@ -43,6 +56,13 @@ namespace DadsDecals
             public Transform? Anchor;
             public int TargetsVersion = -1;
             public readonly List<DecalTarget> Parts = new List<DecalTarget>();
+            public RenderTexture? FirstSurface;
+
+            public void Release()
+            {
+                if (FirstSurface != null) { FirstSurface.Release(); Destroy(FirstSurface); }
+                FirstSurface = null;
+            }
         }
         private readonly Dictionary<DecalPlacement, Overlap> overlaps = new Dictionary<DecalPlacement, Overlap>();
         private readonly Overlap ghostOverlap = new Overlap();
@@ -81,6 +101,9 @@ namespace DadsDecals
         private void OnDestroy()
         {
             if (paint != null) paint.OnThemeChanged -= OnThemeChanged;
+            foreach (var o in overlaps.Values) o.Release();
+            ghostOverlap.Release();
+            ghostTwinOverlap.Release();
         }
 
         public void RefreshTargets()
@@ -128,7 +151,11 @@ namespace DadsDecals
         private void PruneOverlaps(LocoLayout layout)
         {
             foreach (var d in new List<DecalPlacement>(overlaps.Keys))
-                if (!layout.Decals.Contains(d)) overlaps.Remove(d);
+                if (!layout.Decals.Contains(d))
+                {
+                    overlaps[d].Release();
+                    overlaps.Remove(d);
+                }
         }
 
         /// <summary>World matrix of the decal box (unit cube -> world), including roll and mirroring.</summary>
@@ -156,7 +183,10 @@ namespace DadsDecals
             var material = Layers.AtQueue(baseMaterial, queue);
 
             if (overlap.TargetsVersion != targetsVersion || overlap.Anchor != anchor || overlap.Local != local)
+            {
                 FindOverlaps(overlap, anchor, local, toWorld);
+                RenderFirstSurface(overlap, toWorld, d);
+            }
 
             mpb.Clear();
             mpb.SetMatrix(WorldToDecalId, toWorld.inverse);
@@ -174,6 +204,8 @@ namespace DadsDecals
             mpb.SetFloat(ChipSeedId, d.ChipSeed);
             mpb.SetFloat(GlowId, d.Glow);
             mpb.SetFloat(HighlightId, highlight ? 1f : 0f);
+            if (overlap.FirstSurface != null) mpb.SetTexture(FirstSurfaceId, overlap.FirstSurface);
+            mpb.SetFloat(SurfaceToleranceId, SurfaceTolerance / Mathf.Max(0.01f, d.Size[2]));
 
             var draws = 0;
             foreach (var t in overlap.Parts)
@@ -219,6 +251,53 @@ namespace DadsDecals
                 if (t.Anchor != anchor || t.Renderer == null) continue;
                 if (TransformBounds(t.Renderer.localToWorldMatrix, t.LocalBounds).Intersects(box)) overlap.Parts.Add(t);
             }
+        }
+
+        /// <summary>
+        /// Renders where the first surface is across the decal (see DadsDecalDepth.shader). Only
+        /// when the decal or the car's parts change, like the overlap list; parts are assumed to
+        /// stay put relative to the decal's anchor.
+        /// </summary>
+        private static void RenderFirstSurface(Overlap overlap, Matrix4x4 toWorld, DecalPlacement d)
+        {
+            if (Assets.DepthShader == null) return;
+            depthMaterial ??= new Material(Assets.DepthShader) { hideFlags = HideFlags.HideAndDontSave };
+            depthCommands ??= new CommandBuffer { name = "Dad's Decals first surface" };
+            depthProperties ??= new MaterialPropertyBlock();
+
+            // Texels roughly square on the decal.
+            var aspect = Mathf.Abs(d.Size[0]) / Mathf.Max(0.001f, Mathf.Abs(d.Size[1]));
+            var w = aspect >= 1 ? FirstSurfaceResolution : Mathf.Max(16, Mathf.RoundToInt(FirstSurfaceResolution * aspect));
+            var h = aspect >= 1 ? Mathf.Max(16, Mathf.RoundToInt(FirstSurfaceResolution / aspect)) : FirstSurfaceResolution;
+            var rt = overlap.FirstSurface;
+            if (rt == null || rt.width != w || rt.height != h)
+            {
+                overlap.Release();
+                rt = overlap.FirstSurface = new RenderTexture(w, h, 0, RenderTextureFormat.RHalf)
+                {
+                    name = "Dad's Decals first surface",
+                    filterMode = FilterMode.Point,
+                    wrapMode = TextureWrapMode.Clamp,
+                    hideFlags = HideFlags.HideAndDontSave,
+                };
+                rt.Create();
+            }
+
+            var cmd = depthCommands;
+            cmd.Clear();
+            cmd.SetRenderTarget(rt);
+            cmd.ClearRenderTarget(false, true, Color.white);
+            var worldToDecal = toWorld.inverse;
+            foreach (var t in overlap.Parts)
+            {
+                if (t.Renderer == null) continue;
+                var m = t.Renderer.localToWorldMatrix;
+                // Recorded per draw: the command buffer copies the block's values when each draw is added.
+                depthProperties.SetMatrix(ObjectToDecalId, worldToDecal * m);
+                for (var sub = 0; sub < t.Mesh.subMeshCount; sub++)
+                    cmd.DrawMesh(t.Mesh, m, depthMaterial, sub, 0, depthProperties);
+            }
+            Graphics.ExecuteCommandBuffer(cmd);
         }
 
         private Bounds TransformBounds(Matrix4x4 m, Bounds b)
