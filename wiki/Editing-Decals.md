@@ -1,6 +1,6 @@
 # Editing decals
 
-![The Edit tab with the logo selected (it pulses blue on the tender)](../docs/images/gui-edit.png)
+![The Edit tab listing the decals on the tender and the loco, with the selected one's settings in the Decal toolbox](../docs/images/gui-edit.png)
 
 Open the **Edit** tab to work on decals you've already placed.
 

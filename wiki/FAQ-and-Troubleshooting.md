@@ -49,6 +49,8 @@ No. It works on vanilla and custom (CCL) cars as they are.
 ## Does it affect performance?
 Each decal redraws the few parts of the car it touches, only in the camera you're looking through. A few dozen decals on a train should be unnoticeable. Text decals are rendered once and cached, and which parts each decal touches is worked out once and remembered.
 
+![The Debug tab's Performance section: 18 decals on two cars, 0.33 ms per frame](../docs/images/gui-performance.png)
+
 The **Debug** tab's **Performance** section has two settings:
 - **Decal detail**: *High* draws every decal; *Medium* (the default) skips decals under 2 pixels on screen; *Low* skips anything under 6 pixels. Far-off placards disappear first; big lettering stays.
 - **Max draw distance**: decals further away than this aren't drawn. *No limit* by default.

@@ -1,6 +1,6 @@
 # Colour, finish and weathering
 
-![The Size and placement, Colour, Finish and Weathering sections](../docs/images/gui-settings.png)
+![The Decal toolbox for a selected text decal: Size and placement, Colour, Finish and Weathering](../docs/images/gui-settings.png)
 
 These sections are in the **Decal toolbox** window, which pops out beside the main window: for the next decal while you're placing, and for the selected decal while you're editing.
 
@@ -12,7 +12,7 @@ These sections are in the **Decal toolbox** window, which pops out beside the ma
 That's why some examples have a white "(tintable)" version.
 
 ### The colour picker
-![The colour picker open for a text colour](../docs/images/gui-colour-picker.png)
+![The colour picker open for a tint: RGB sliders, preset and saved swatches, Save colour and Pick from screen](../docs/images/gui-colour-picker.png)
 
 Every colour field (tint, text colour, outline colour, grime colour) has:
 - a **swatch** showing the current colour;
