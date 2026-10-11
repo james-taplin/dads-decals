@@ -1,8 +1,8 @@
 # Colour, finish and weathering
 
-![The Size and placement, Colour, Finish and Weathering sections](../docs/images/gui-settings.png)
+![The Decal toolbox for a selected text decal ("72V SUPPLY" beside the warning sign): Size and placement, Colour, Finish and Weathering](../docs/images/gui-settings.png)
 
-These sections appear under **Settings for the next decal** in the Place tab, and for the selected decal in the Edit tab.
+These sections are in the **Decal toolbox** window, which pops out beside the main window: for the next decal while you're placing, and for the selected decal while you're editing.
 
 ## Colour
 **Tint** multiplies the decal's colours:
@@ -12,7 +12,7 @@ These sections appear under **Settings for the next decal** in the Place tab, an
 That's why some examples have a white "(tintable)" version.
 
 ### The colour picker
-![The colour picker open for a text colour](../docs/images/gui-colour-picker.png)
+![The colour picker open for a tint: RGB sliders, preset and saved swatches, Save colour and Pick from screen](../docs/images/gui-colour-picker.png)
 
 Every colour field (tint, text colour, outline colour, grime colour) has:
 - a **swatch** showing the current colour;
@@ -43,13 +43,13 @@ Both effects are procedural, so they work on any image, and each decal gets its 
 
 **Grime** darkens the decal with streaks running down and blotches, like rain-washed dirt.
 - **Grime**: strength. Low values give a few streaks; high values cover most of the decal.
-- **New grime**: re-rolls the pattern.
+- **New grime pattern** (under the Weathering sliders): re-rolls the pattern.
 - **Grime colour**: the colour of the dirt (default dark brown-grey). Try rust brown for old steam locos, or grey for road dust.
 - Dirty areas also lose shine.
 
 **Chipping** removes small flakes of the decal, like paint wearing off.
 - **Chipping**: strength. Higher values mean more and bigger chips.
-- **New chips**: re-rolls the pattern.
+- **New chip pattern** (under the Weathering sliders): re-rolls the pattern.
 
 Both are in real-world units, so a small placard and a large herald get similar-sized streaks and chips.
 

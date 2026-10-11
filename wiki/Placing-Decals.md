@@ -25,9 +25,9 @@ Section headers with ▼/► (palette categories, *Size and placement*, *Colour*
 
 Placing pauses whenever the Decals window isn't on screen: when you lock the mouse to look around, or close the window from the toolbar. The preview disappears and clicks do nothing in the world. Open the window again and you carry on where you left off.
 
-While placing, the panel shows an **Aiming at:** line and how many parts the preview is drawn on. It's mainly useful if the preview doesn't appear (see [FAQ](FAQ-and-Troubleshooting.md)).
+While placing, the status line at the top of the panel says what you're placing, whether the mouse is over a car, and the controls. If the preview doesn't appear, the **Debug** tab's **Aiming at:** line shows what the mouse is hitting and how many parts the preview is drawn on (see [FAQ](FAQ-and-Troubleshooting.md)).
 
-![Placing mode: the Aiming at line in the panel and the live preview on the tender](../docs/images/gui-placing-preview.png)
+![Placing mode: the status line shows what you're placing and which car the mouse is over, and the herald previews on the tender](../docs/images/gui-placing-preview.png)
 
 ## Placement options
 These sit just above the palette:
@@ -47,7 +47,7 @@ These sit just above the palette:
 > The game's exterior camera also zooms with the mouse wheel, so it may zoom while you resize. The sliders in the panel do the same job without that.
 
 ## Settings for the next decal
-Everything below **Settings for the next decal** applies to the decals you're about to place:
+The **Decal toolbox** window pops out beside the main window when you start placing (or press **Open toolbox**). Everything in it applies to the decals you're about to place:
 
 - **Size and placement:**
   - **Width** in metres. **Keep image proportions** sets the height from the image shape.
@@ -62,7 +62,7 @@ A decal sticks to the part you clicked:
 - the **car body**, or
 - a **bogie** (or an articulated engine unit on locos like the Big Boy).
 
-It's only drawn on that part, so a decal on the body doesn't smear onto a bogie that swings underneath it, and a decal on a bogie turns with it. You can change the attachment later in the Edit tab.
+It's only drawn on that part, so a decal on the body doesn't smear onto a bogie that swings underneath it, and a decal on a bogie turns with it. You can change the attachment later: select the decal in the Edit tab and use **Attached to** in the Decal toolbox window.
 
 Avoid placing on animated parts inside a bogie, like rods and valve gear. The decal stays fixed to the bogie, so it slides as the rods move.
 

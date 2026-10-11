@@ -4,7 +4,7 @@ A Derail Valley mod for putting decals on locomotives, tenders and wagons: road 
 
 ![An S060 tank engine covered in decals: anime stickers, cats, stripes, placards and rosy glowing cheeks on the smokebox](docs/images/showcase-s060-side.webp)
 
-**Status: pre-release (v0.3.1).** It works well in testing, but expect rough edges. Please report problems on the [issue tracker](https://github.com/james-taplin/dads-decals/issues).
+**Status: stable (v0.3.2).** Please report problems on the [issue tracker](https://github.com/james-taplin/dads-decals/issues).
 
 ## Features
 - **Works on any car**: vanilla and custom (CCL) locos, tenders and wagons. Loco authors don't need to do anything.
@@ -17,7 +17,7 @@ A Derail Valley mod for putting decals on locomotives, tenders and wagons: road 
 - **Layouts**: saved per car in your save, templates per livery, copy between cars, export/import for sharing, and a layout per paint scheme (including Skin Manager skins).
 - **Example decals included**: warning stripes, OSHA-style placards, voltage labels, fuel labels, access markings and DVRT-style logos.
 
-![The Decals window in the Edit tab, with the selected logo pulsing on the tender](docs/images/gui-edit.png)
+![The Dad's Decals window in the Edit tab, with the selected decal's settings in the Decal toolbox](docs/images/gui-edit.png)
 
 Keep it tidy:
 
@@ -37,7 +37,7 @@ Or go completely overboard:
 
 ## Quick start
 1. Download `DadsDecals-<version>.zip` from [Releases](https://github.com/james-taplin/dads-decals/releases) and install it with Unity Mod Manager.
-2. In game, free the cursor and click **Decals** on the Mod Toolbar.
+2. In game, free the cursor and click **DD** (Dad's Decals) on the Mod Toolbar.
 3. Click an image in the **Place** tab, point at a car and left-click.
 
 The full guide is in the **[wiki](wiki/Home.md)**:

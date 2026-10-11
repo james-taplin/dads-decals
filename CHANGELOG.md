@@ -17,16 +17,29 @@ First step of multiplayer support for [Derail Valley Multiplayer](https://github
 ### Changed
 - Save format v3: every decal gets a stable ID and a "placed by" name. Older saves load fine and get new IDs.
 
-## [Unreleased]
+## [0.3.2] - 2026-10-11
+
+First stable release. A tidier window layout, plus fixes found while testing it.
 
 ### Added
+- **Type exact values.** Every settings slider now has a box to type a number into, its unit, and a **Reset** button (hover it to see the default). Percentages for opacity, smoothness, metallic, grime, chipping and outline; degrees for rotation and wrap angle; 0–255 for colour sliders.
+- **Decal toolbox.** Size, colour, finish and weathering now live in a second, smaller window that pops out beside the main one (toolbar button **DT**; the main window is now **DD**). It opens by itself when you start placing or select a decal, and closes when you stop; **Open toolbox** in the Place and Edit tabs opens it by hand. For a selected decal it also holds **Attached to** (body or bogie), the layer buttons, **Duplicate**, **Mirror**/**Unlink** and **Delete**, at the top where they're easy to find. Drag and resize it anywhere; Mod Toolbar remembers where. Closing the main window closes it too.
+- **Status line** under the tabs: what you're placing or editing, whether the mouse is over a car, the controls for that mode, and the car you're working on. It replaces the paragraphs of help text.
 - **Performance settings** in the Debug tab: *Decal detail* (High / Medium / Low) skips decals that are only a few pixels big on screen, and *Max draw distance* skips far-away ones. The selected decal and the placement preview are never skipped.
 - **Performance readout** in the Debug tab: decals drawn and skipped last frame, parts drawn, and Dad's Decals' CPU time per frame.
 
 ### Changed
+- **Solid panel.** The window body is now opaque (Unity's default grey), so scenery no longer shows through the text.
+- The **Aiming at** readout (with the preview's part count) moved from the Place tab to the Debug tab.
 - **Decals stay on at a distance.** They used to be drawn only on each car's full-detail model, so they could vanish when a car switched to its low-detail model far away. They now draw on whichever detail level is showing.
 - **Less work per frame.** Which parts each decal overlaps is now worked out once and remembered until the decal or the car changes, instead of being checked against every part every frame.
 - **Faster on split locos.** Parts are matched using the triangles they actually draw. Locomotive Mesh Splitter's S060 pieces each carry the whole body's vertices, so every decal used to be drawn on all ~50 pieces.
+
+### Fixed
+- **Edit lists the tender's decals too.** A steam loco and its tender are separate cars, and the Edit list only showed whichever one you last pointed at, so text on the tender and images on the cab never appeared together. It now lists the car's decals and those on any car coupled to it, each under its own heading.
+- **Colour swatches did nothing** until you'd picked from the screen: the hex box wrote its old value back over the click whenever any text box had focus.
+- **Button labels were cut off** at both ends: fixed-width buttons were too narrow for the game's font. They now fit their text.
+- **Toolbox too narrow**: the Grime and Chipping rows added a sideways scrollbar at the toolbox's default width. **New grime pattern** and **New chip pattern** now sit on their own row under the sliders, and the toolbox opens 460 px wide.
 
 ## [0.3.1] - 2026-10-06 (pre-release)
 

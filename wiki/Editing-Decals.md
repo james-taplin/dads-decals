@@ -1,12 +1,12 @@
 # Editing decals
 
-![The Edit tab with the logo selected (it pulses blue on the tender)](../docs/images/gui-edit.png)
+![The Edit tab listing the decals on the tender and the loco, with the selected one's settings in the Decal toolbox](../docs/images/gui-edit.png)
 
 Open the **Edit** tab to work on decals you've already placed.
 
 ## Selecting
 - **Click a decal on the car** to select it. If decals overlap, the smallest one under the cursor wins.
-- Or click it in the **Decals on this car** list. It's shown top layer first; mirrored pairs are marked *(mirrored pair)*.
+- Or click it in the **Decals on ...** list. It's shown top layer first; mirrored pairs are marked *(mirrored pair)*. Cars coupled to this one that have decals (such as a steam loco's tender) get their own list underneath.
 - The selected decal **pulses blue** on the car. Its mirrored twin pulses too.
 - **Right-click** in the world to deselect.
 - Editing pauses while the Decals window is closed or the mouse is locked: the selected decal stops pulsing and clicks, keys and the mouse wheel do nothing. It's still selected when you open the window again.
@@ -19,10 +19,11 @@ Open the **Edit** tab to work on decals you've already placed.
 | **Shift + wheel** | Resize |
 | **Delete** key | Delete it (and its mirrored twin) |
 
-**Keep level (when moving)** and **Snap 15°** work as in the Place tab. Every setting in the panel's settings sections (size, rotation, colour, finish, weathering, and the text for text decals) applies **live** to the selected decal.
+**Keep level (when moving)** and **Snap 15°** work as in the Place tab. Selecting a decal opens the **Decal toolbox** window beside the main one; every setting there (size, rotation, colour, finish, weathering, and the text for text decals) applies **live** to the selected decal.
 
 ## Buttons
-- **Body / Front bogie / Rear bogie**: which part the decal is attached to. Changing it keeps the decal where it is in the world; it just moves with a different part from then on.
+These are at the top of the **Decal toolbox** window when a decal is selected.
+- **Attached to: Body / Front bogie / Rear bogie**: which part the decal is attached to. Changing it keeps the decal where it is in the world; it just moves with a different part from then on.
 - **Duplicate**: makes a copy just below the original and selects it, ready to drag into place.
 - **Mirror to other side**: adds a linked mirror copy on the opposite side.
 - **Unlink mirror**: breaks the link, so the two copies can be edited separately.
@@ -31,7 +32,7 @@ Open the **Edit** tab to work on decals you've already placed.
 ## Layers: which decal is on top
 Where decals overlap, the one on a higher layer always shows on top, from every angle.
 - New decals (placed or duplicated) go on top.
-- The Edit tab shows the selected decal's **Layer n of N** (1 = bottom), with **To back**, **Backward**, **Forward** and **To front**.
+- The **Decal toolbox** window shows the selected decal's **Layer n of N** (1 = bottom), with **To back**, **Backward**, **Forward** and **To front**.
 - A mirrored pair is one layer: both sides move together.
 - Layers only matter between decals on the same car. Undo puts the old order back.
 - Up to 49 layers per car are kept strictly apart. On a car with more, neighbouring layers can share a slot, and decals overlapping across those two may sort by distance instead.

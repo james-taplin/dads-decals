@@ -1,6 +1,6 @@
 # Layouts and sharing
 
-![The Layouts tab](../docs/images/gui-layouts.png)
+![The Layouts tab, with the DAVID nameplate on the loco](../docs/images/gui-layouts.png)
 
 A **layout** is the set of decals on one car. This page covers how layouts are saved, reused and shared.
 
