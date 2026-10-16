@@ -35,43 +35,37 @@ You don't have to do all of these. Anything you notice is useful.
 
 ## After a session, or as soon as something goes wrong
 
-### 1. Save the multiplayer log (everyone with Dad's Decals: host and guests)
-Before you quit:
+### The easy way: one button (game still running)
 1. Free the cursor and open Dad's Decals (**DD** on the Mod Toolbar).
-2. Go to the **Debug** tab.
-3. Click **Save multiplayer log to a file**.
+2. **Optional:** if one car's decals look wrong, point at that car first. Its diagnostics are added too.
+3. Go to the **Debug** tab and click **Create debug zip**.
+4. Click **Open folder** to find it: `Mods\DadsDecals\Diagnostics\debug-<date>-<time>.zip`.
 
-It saves to:
-```
-<Derail Valley folder>\Mods\DadsDecals\Diagnostics\multiplayer-<date>-<time>.txt
-```
-The Debug tab shows the exact path after saving. Doing it once per session is plenty, or right after something odd happens.
+The zip collects everything James needs in one file:
+- the game log and the previous session's log;
+- the UMM log;
+- Dad's Decals' multiplayer log and diagnostics;
+- your Dad's Decals settings;
+- a summary of your versions and installed mods.
 
-### 2. If a decal looks wrong on one car
-Stand next to that car (or point at it). In the **Debug** tab, click **Run diagnostics on <car>**. It saves to the same `Diagnostics` folder as `<car id>_<loco type>.txt`.
+Everyone with Dad's Decals should make one, host and guests alike. Do it once at the end of a session, and again right after anything odd happens.
 
-### 3. Copy the game logs as soon as you quit
-The game **overwrites these the next time it starts**, so copy them before relaunching:
+### If the game crashed or you've already quit
+The game **overwrites its log the next time it starts**, so grab these before relaunching:
 
 | File | Where |
 |---|---|
 | `Player.log` | `%USERPROFILE%\AppData\LocalLow\Altfuture\Derail Valley\Player.log` |
 | `Player-prev.log` | Same folder: the session before the last one. Send this one if you already restarted. |
 | UMM log | `<Derail Valley folder>\DerailValley_Data\Managed\UnityModManager\Log.txt` |
+| Dad's Decals files | `<Derail Valley folder>\Mods\DadsDecals\Diagnostics\` (any recent `.txt` or `.zip`) |
 
 Tip: paste `%USERPROFILE%\AppData\LocalLow\Altfuture\Derail Valley` into the Explorer address bar to open the folder.
 
 `<Derail Valley folder>` is usually `C:\Program Files (x86)\Steam\steamapps\common\Derail Valley`. In Steam: right-click Derail Valley → **Manage** → **Browse local files**.
 
-### 4. Send it
-Put these in one zip:
-- the `multiplayer-….txt` log(s);
-- any diagnostics `.txt` files;
-- `Player.log` (or `Player-prev.log`);
-- the UMM `Log.txt`;
-- screenshots or a short clip if something looked wrong.
-
-With the zip, write a few lines:
+### Send it
+Send the debug zip (or the files above, zipped), plus screenshots or a short clip if something looked wrong. With it, write a few lines:
 - Were you the **host or a guest**?
 - **Who was in the game**, and which of them had Dad's Decals (and which version)?
 - **Steam or direct-IP** connection?

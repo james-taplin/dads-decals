@@ -887,6 +887,23 @@ namespace DadsDecals
 
         private void DrawDebugTab(TrainCar? car)
         {
+            GUILayout.Label("Something wrong? Create a debug zip and send it with a few lines about what happened.");
+            GUILayout.BeginHorizontal();
+            if (GUILayout.Button("Create debug zip"))
+            {
+                try { lastDebugZip = "Saved: " + DebugReport.Create(car); }
+                catch (Exception e) { lastDebugZip = "Couldn't create it: " + e.Message; Main.Log.LogException("Debug zip", e); }
+            }
+            if (GUILayout.Button("Open folder", GUILayout.Width(110)))
+            {
+                System.IO.Directory.CreateDirectory(DebugReport.Folder);
+                Application.OpenURL("file:///" + DebugReport.Folder.Replace('\\', '/'));
+            }
+            GUILayout.EndHorizontal();
+            if (lastDebugZip.Length > 0)
+                GUILayout.Label(lastDebugZip + "\nIt includes the game's log, which shows your Steam and Windows user names; check it before posting publicly.");
+            GUILayout.Space(6);
+
             if (Section("debug.perf", "Performance"))
             {
                 var s = Main.Settings;
@@ -920,5 +937,6 @@ namespace DadsDecals
         }
 
         private string lastMpLogPath = "";
+        private string lastDebugZip = "";
     }
 }

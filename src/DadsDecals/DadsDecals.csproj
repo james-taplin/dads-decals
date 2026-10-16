@@ -34,6 +34,8 @@
     <Reference Include="UnityEngine.TextRenderingModule" HintPath="$(DvManaged)\UnityEngine.TextRenderingModule.dll" Private="false" />
     <Reference Include="UnityEngine.InputLegacyModule" HintPath="$(DvManaged)\UnityEngine.InputLegacyModule.dll" Private="false" />
     <!-- Mod loader -->
+    <Reference Include="System.IO.Compression" HintPath="$(DvManaged)\System.IO.Compression.dll" Private="false" />
+    <Reference Include="System.IO.Compression.FileSystem" HintPath="$(DvManaged)\System.IO.Compression.FileSystem.dll" Private="false" />
     <Reference Include="UnityModManager" HintPath="$(DvManaged)\UnityModManager\UnityModManager.dll" Private="false" />
     <Reference Include="0Harmony" HintPath="$(DvManaged)\UnityModManager\0Harmony.dll" Private="false" />
     <!-- Dependency mods -->
