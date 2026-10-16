@@ -307,7 +307,9 @@ namespace DadsDecals
         private void Pose(TrainCar car, RaycastHit hit, DecalPlacement d, DecalPlacement sizeFrom)
         {
             var anchorPath = DecalTargets.AnchorFor(car, hit.collider.transform);
-            var anchor = DecalTargets.ResolveAnchor(car, anchorPath);
+            // Measured against the cab interior when the hit is inside it (it's lined up with the
+            // body but can trail it by a frame at speed); stored as a body decal either way.
+            var anchor = DecalTargets.FrameFor(car, hit.collider.transform, DecalTargets.ResolveAnchor(car, anchorPath));
             Vector3 forward, up;
             if (KeepLevel)
             {
@@ -405,8 +407,14 @@ namespace DadsDecals
 
         // ---- input helpers -------------------------------------------------------------------
 
-        private static string Describe(RaycastHit hit, TrainCar car) =>
-            $"{car.ID} / {Diagnostics.Path(car.transform, hit.collider.transform)} ({hit.collider.GetType().Name}), {hit.distance:0.0} m";
+        private static string Describe(RaycastHit hit, TrainCar car)
+        {
+            var t = hit.collider.transform;
+            var path = car.interior != null && t.IsChildOf(car.interior)
+                ? "interior/" + Diagnostics.Path(car.interior, t)
+                : Diagnostics.Path(car.transform, t);
+            return $"{car.ID} / {path} ({hit.collider.GetType().Name}), {hit.distance:0.0} m";
+        }
 
         /// <summary>Nearest hit on a train car along the ray (only <paramref name="only"/> if given).</summary>
         private static bool RaycastAnyCar(Ray ray, TrainCar? only, out RaycastHit result, out TrainCar? car)
@@ -418,7 +426,8 @@ namespace DadsDecals
             foreach (var h in hits)
             {
                 if (h.distance >= best) continue;
-                var c = h.collider.GetComponentInParent<TrainCar>();
+                // Resolve also finds the car for colliders in its cab interior, a separate object.
+                var c = TrainCar.Resolve(h.collider.gameObject);
                 if (c == null || c.logicCar == null) continue;
                 if (only != null && c != only) continue;
                 best = h.distance;

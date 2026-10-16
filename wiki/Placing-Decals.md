@@ -66,5 +66,13 @@ It's only drawn on that part, so a decal on the body doesn't smear onto a bogie 
 
 Avoid placing on animated parts inside a bogie, like rods and valve gear. The decal stays fixed to the bogie, so it slides as the rods move.
 
+## Decals in the cab
+Since 0.4, decals go inside the cab too: walls, ceiling, backhead, dash. Climb in, open the panel, pick an image or text and point at the surface, as you would outside.
+- The game only loads a cab's interior when you're near it. Your cab decals are saved with the car and come back when you return; from outside, they show through the windows on the simpler cab the game draws at a distance.
+- Levers, valves, switches, doors and gauges can't take decals: they move, and the decal would stay behind.
+- Cab decals belong to the car body, so templates and **Copy from another car** bring them along.
+- A decal stops at the first surface it meets, so one on the outside of the cab doesn't show up inside, and one inside doesn't show through to the outside.
+- If you can't aim at a cab wall, run **Run diagnostics** from the Debug tab while in the cab and include the *Cab interior* line in a bug report.
+
 ## Saving
 Decals are stored **in your save game**, per car. They're written when the game saves, so save before quitting.

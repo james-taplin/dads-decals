@@ -16,6 +16,17 @@ First step of multiplayer support for [Derail Valley Multiplayer](https://github
 
 ### Changed
 - Save format v3: every decal gets a stable ID and a "placed by" name. Older saves load fine and get new IDs.
+## [0.4.0] - 2026-10-16
+
+### Added
+- **Decals in the cab.** Place decals on cab interior walls, ceilings, backheads and dashes. Point at them from inside the cab with the panel open, as you would outside. They come back when you walk away and return (DV loads the interior only when you're near), and they're saved with the car like any other decal.
+- Cab decals also show on the low-detail cab you see through the windows from outside.
+- Levers, valves, switches, doors and gauges are left out, so a decal doesn't stay behind while the part moves through it.
+- Diagnostics report the cab interior: whether it's loaded and how many parts can take decals.
+
+### Fixed
+- **Decals reappeared floating in front of the loco with the high beam on** (seen on the DH4: a number on the hood showed again about half a metre out, by the railing). The headlight beams are cone-shaped meshes that switch on with the lights, and decals near a lamp were drawn on them too. Headlight beams, lamp glare and other effect meshes are no longer decal targets.
+
 ## [0.3.3] - 2026-10-11
 
 ### Fixed

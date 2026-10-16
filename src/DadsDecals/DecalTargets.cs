@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DadsDecals
 {
-    /// <summary>A renderer decals can be drawn onto: an exterior mesh of a car, at any detail level.</summary>
+    /// <summary>A renderer decals can be drawn onto: a mesh of a car (outside or cab interior), at any detail level.</summary>
     internal sealed class DecalTarget
     {
         public readonly MeshRenderer Renderer;
@@ -12,7 +12,13 @@ namespace DadsDecals
         /// <summary>Mesh-space bounds of the triangles actually drawn (see <see cref="DecalTargets.UsedBounds"/>).</summary>
         public readonly Bounds LocalBounds;
 
-        public readonly Transform Anchor;       // car root, or the bogie this renderer belongs to
+        /// <summary>
+        /// The frame this renderer moves with: the car root, the bogie it belongs to, or the cab
+        /// interior (<see cref="TrainCar.interior"/>). The interior is a separate object that DV keeps
+        /// lined up with the car body, so body decals draw on interior parts too, using the
+        /// interior's own transform (which can trail the body by a frame).
+        /// </summary>
+        public readonly Transform Anchor;
 
         public DecalTarget(MeshRenderer renderer, Mesh mesh, Transform anchor)
         {
@@ -59,18 +65,54 @@ namespace DadsDecals
         public static List<DecalTarget> Find(TrainCar car)
         {
             var root = car.transform;
+            var interior = car.interior;
             var bogies = car.Bogies.Where(b => b != null).Select(b => b.transform).ToArray();
             var list = new List<DecalTarget>();
             foreach (var r in car.GetComponentsInChildren<MeshRenderer>(true))
             {
+                // Cars without an interior prefab keep [interior] under the root; it's handled below.
+                if (interior != null && r.transform.IsChildOf(interior)) continue;
                 var f = r.GetComponent<MeshFilter>();
                 if (f == null || f.sharedMesh == null) continue;
                 if (IsExcluded(r, Diagnostics.Path(root, r.transform))) continue;
                 var anchor = bogies.FirstOrDefault(b => r.transform.IsChildOf(b)) ?? root;
                 list.Add(new DecalTarget(r, f.sharedMesh, anchor));
             }
+
+            // The cab interior: loaded when you're near (plus the outside handles and doors), so
+            // DecalRenderer refreshes targets when it loads or unloads. Moving parts are left out.
+            if (interior != null)
+            {
+                foreach (var r in interior.GetComponentsInChildren<MeshRenderer>(true))
+                {
+                    var f = r.GetComponent<MeshFilter>();
+                    if (f == null || f.sharedMesh == null) continue;
+                    if (IsExcluded(r, Diagnostics.Path(interior, r.transform)) || IsMovingPart(r.transform, interior)) continue;
+                    list.Add(new DecalTarget(r, f.sharedMesh, interior));
+                }
+            }
             return list;
         }
+
+        /// <summary>
+        /// Levers, valves, switches, doors (cab controls) and gauges (their needles turn): a decal
+        /// drawn on one would stay put while the part moves through it.
+        /// </summary>
+        private static bool IsMovingPart(Transform t, Transform stopAt)
+        {
+            for (var x = t; x != null && x != stopAt; x = x.parent)
+                if (x.GetComponent<DV.CabControls.ControlImplBase>() != null || x.GetComponent<Indicator>() != null)
+                    return true;
+            return false;
+        }
+
+        /// <summary>
+        /// The transform a hit's position should be measured against: the cab interior for interior
+        /// colliders (it can trail the body by a frame at speed), else the decal's anchor. Decals on
+        /// the interior still use the body anchor, since the interior is lined up with the body.
+        /// </summary>
+        public static Transform FrameFor(TrainCar car, Transform hitTransform, Transform anchor) =>
+            anchor == car.transform && car.interior != null && hitTransform.IsChildOf(car.interior) ? car.interior : anchor;
 
         /// <summary>The anchor a decal should use when placed on this collider: its bogie, else the car body.</summary>
         public static string AnchorFor(TrainCar car, Transform hitTransform)
@@ -106,13 +148,22 @@ namespace DadsDecals
         public static bool IsExcluded(MeshRenderer r, string path)
         {
             var p = path.ToLowerInvariant();
-            if (p.Contains("[interior") || p.Contains("broken") || p.Contains("[car plate") || p.Contains("textmeshpro")) return true;
+            // [interior LOD] (the low-detail cab shown while the interior isn't loaded) is a target, so
+            // cab decals stay visible through the windows from outside.
+            if (p.Contains("broken") || p.Contains("[car plate") || p.Contains("textmeshpro")) return true;
             // Every detail level (LOD) is a target: the projection works on any mesh, and only the
             // level being shown is visible, so decals stay on when a car switches to its low-detail
             // model in the distance instead of popping off.
-            // Particle-ish / glass-ish materials make poor decal targets.
+            // Headlight beams (Volumetric Light Beam cones): switched on with the lights, they reach
+            // out in front of the lamps, and a decal near a lamp got drawn on the beam too, floating
+            // in mid-air. Their renderer can be inactive when targets are gathered, hence the walk.
+            if (r.GetComponent<VLB.BeamGeometry>() != null) return true;
+            for (var t = r.transform; t != null; t = t.parent)
+                if (t.GetComponent<VLB.VolumetricLightBeam>() != null) return true;
+            // Particle-ish / glass-ish / effect materials make poor decal targets.
             var shader = r.sharedMaterial != null && r.sharedMaterial.shader != null ? r.sharedMaterial.shader.name : "";
-            if (shader.StartsWith("Particles/") || shader.StartsWith("Unlit/") || shader.Contains("Window") || shader.Contains("Smoke") || shader == "TransparencyWithFog") return true;
+            if (shader.StartsWith("Particles/") || shader.StartsWith("Unlit/") || shader.StartsWith("Hidden/") || shader.Contains("Window") || shader.Contains("Smoke") ||
+                shader.Contains("VolumetricLightBeam") || shader.Contains("SpriteLight") || shader == "TransparencyWithFog") return true;
             return false;
         }
     }

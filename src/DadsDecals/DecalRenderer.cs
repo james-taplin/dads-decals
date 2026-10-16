@@ -96,11 +96,20 @@ namespace DadsDecals
             RefreshTargets();
             paint = car.PaintExterior;
             if (paint != null) paint.OnThemeChanged += OnThemeChanged;
+            car.InteriorLoaded += OnInteriorChanged;
+            car.ExternalInteractableLoaded += OnInteriorChanged;
         }
+
+        // The cab interior (and the outside handles/doors) load and unload as you come and go.
+        // Refresh a frame later: on unload the old objects are only destroyed at the end of the frame.
+        private int refreshTargetsAt;
+        private void OnInteriorChanged(GameObject _) => refreshTargetsAt = Time.frameCount + 1;
 
         private void OnDestroy()
         {
             if (paint != null) paint.OnThemeChanged -= OnThemeChanged;
+            car.InteriorLoaded -= OnInteriorChanged;
+            car.ExternalInteractableLoaded -= OnInteriorChanged;
             foreach (var o in overlaps.Values) o.Release();
             ghostOverlap.Release();
             ghostTwinOverlap.Release();
@@ -125,6 +134,11 @@ namespace DadsDecals
 
         private void LateUpdate()
         {
+            if (refreshTargetsAt > 0 && Time.frameCount >= refreshTargetsAt)
+            {
+                refreshTargetsAt = 0;
+                RefreshTargets();
+            }
             if (Assets.DecalShader == null || car.logicCar == null) return;
             // Only the camera the player looks through. camera: null in DrawMesh means *every* camera,
             // which put decals into DV's other cameras (UI/render-texture/probe cameras) - seen as a
@@ -189,12 +203,10 @@ namespace DadsDecals
             if (overlap.TargetsVersion != targetsVersion || overlap.Anchor != anchor || overlap.Local != local)
             {
                 FindOverlaps(overlap, anchor, local, toWorld);
-                RenderFirstSurface(overlap, toWorld, d);
+                RenderFirstSurface(overlap, local, d);
             }
 
             mpb.Clear();
-            mpb.SetMatrix(WorldToDecalId, toWorld.inverse);
-            mpb.SetVector(DecalForwardId, toWorld.MultiplyVector(Vector3.forward).normalized);
             mpb.SetVector(DecalSizeId, new Vector4(d.Size[0], d.Size[1], 0, 0));
             mpb.SetColor(ColorId, new Color(d.Tint[0], d.Tint[1], d.Tint[2], d.Tint[3]));
             mpb.SetFloat(OpacityId, d.Opacity);
@@ -212,11 +224,21 @@ namespace DadsDecals
             mpb.SetFloat(SurfaceToleranceId, SurfaceTolerance / Mathf.Max(0.01f, d.Size[2]));
 
             var draws = 0;
+            Transform? frame = null;
             foreach (var t in overlap.Parts)
             {
                 var r = t.Renderer;
                 // isVisible is false for detail levels (LODs) not currently shown, and for parts off screen.
                 if (r == null || !r.enabled || !r.isVisible || !r.gameObject.activeInHierarchy) continue;
+                if (t.Anchor != frame)
+                {
+                    // The box in this part's frame (the body, or the cab interior lined up with it).
+                    // DrawMesh copies the block, so changing it between parts is fine.
+                    frame = t.Anchor;
+                    var boxToWorld = frame == anchor ? toWorld : frame.localToWorldMatrix * local;
+                    mpb.SetMatrix(WorldToDecalId, boxToWorld.inverse);
+                    mpb.SetVector(DecalForwardId, boxToWorld.MultiplyVector(Vector3.forward).normalized);
+                }
                 var m = r.localToWorldMatrix;
                 for (var sub = 0; sub < t.Mesh.subMeshCount; sub++)
                     Graphics.DrawMesh(t.Mesh, m, material, r.gameObject.layer, viewCamera, sub, mpb, ShadowCastingMode.Off, true);
@@ -250,10 +272,22 @@ namespace DadsDecals
             overlap.TargetsVersion = targetsVersion;
             var box = WorldBounds(toWorld);
             box.Expand(OverlapMargin * 2);
+            // Body decals also go on the cab interior, which sits in the same place as the body.
+            var interior = anchor == car.transform ? car.interior : null;
+            var interiorBox = default(Bounds);
+            if (interior != null)
+            {
+                interiorBox = WorldBounds(interior.localToWorldMatrix * local);
+                interiorBox.Expand(OverlapMargin * 2);
+            }
             foreach (var t in targets)
             {
-                if (t.Anchor != anchor || t.Renderer == null) continue;
-                if (TransformBounds(t.Renderer.localToWorldMatrix, t.LocalBounds).Intersects(box)) overlap.Parts.Add(t);
+                if (t.Renderer == null) continue;
+                Bounds b;
+                if (t.Anchor == anchor) b = box;
+                else if (interior != null && t.Anchor == interior) b = interiorBox;
+                else continue;
+                if (TransformBounds(t.Renderer.localToWorldMatrix, t.LocalBounds).Intersects(b)) overlap.Parts.Add(t);
             }
         }
 
@@ -262,7 +296,7 @@ namespace DadsDecals
         /// when the decal or the car's parts change, like the overlap list; parts are assumed to
         /// stay put relative to the decal's anchor.
         /// </summary>
-        private static void RenderFirstSurface(Overlap overlap, Matrix4x4 toWorld, DecalPlacement d)
+        private static void RenderFirstSurface(Overlap overlap, Matrix4x4 local, DecalPlacement d)
         {
             if (Assets.DepthShader == null) return;
             depthMaterial ??= new Material(Assets.DepthShader) { hideFlags = HideFlags.HideAndDontSave };
@@ -291,12 +325,14 @@ namespace DadsDecals
             cmd.Clear();
             cmd.SetRenderTarget(rt);
             cmd.ClearRenderTarget(false, true, Color.white);
-            var worldToDecal = toWorld.inverse;
             foreach (var t in overlap.Parts)
             {
-                if (t.Renderer == null) continue;
+                if (t.Renderer == null || t.Anchor == null) continue;
                 var m = t.Renderer.localToWorldMatrix;
-                // Recorded per draw: the command buffer copies the block's values when each draw is added.
+                // Each part in its own frame (body, bogie or cab interior), so interior and outside
+                // parts land in the same picture. Recorded per draw: the command buffer copies the
+                // block's values when each draw is added.
+                var worldToDecal = (t.Anchor.localToWorldMatrix * local).inverse;
                 depthProperties.SetMatrix(ObjectToDecalId, worldToDecal * m);
                 for (var sub = 0; sub < t.Mesh.subMeshCount; sub++)
                     cmd.DrawMesh(t.Mesh, m, depthMaterial, sub, 0, depthProperties);
