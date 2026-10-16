@@ -19,6 +19,9 @@ Copy-Item (Join-Path $src "bin\Release\DadsDecals.dll"), (Join-Path $src "info.j
 # Loaded only when the Multiplayer mod is installed; MultiplayerAPI.dll itself is NOT shipped.
 Copy-Item (Join-Path $repo "src\DadsDecals.Multiplayer\bin\Release\DadsDecals.Multiplayer.dll") $stage
 Copy-Item (Join-Path $src "Bundles\dadsdecals") (Join-Path $stage "Bundles")
+# Test builds carry the tester guide (how to collect logs).
+$guide = Join-Path $repo "docs\MULTIPLAYER-TESTING.md"
+if ($version -match "-" -and (Test-Path $guide)) { Copy-Item $guide $stage }
 Copy-Item (Join-Path $repo "examples\Decals") (Join-Path $stage "Decals") -Recurse
 
 $zip = Join-Path $repo "dist\DadsDecals-$version.zip"

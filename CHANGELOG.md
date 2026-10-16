@@ -13,6 +13,7 @@ First step of multiplayer support for [Derail Valley Multiplayer](https://github
 - **Local-only mode.** If the host has no Dad's Decals (or an incompatible version), a guest's decals stay on their own screen, and the panel says so.
 - **Multiplayer log** in the Debug tab, with a button that saves it to a file for bug reports.
 - Multiplayer code lives in a separate `DadsDecals.Multiplayer.dll`, loaded only when the Multiplayer mod is installed.
+- **Tester guide** (`MULTIPLAYER-TESTING.md`, in the zip and in `docs/`): what to try, and which logs and files to send after a session or a problem.
 
 ### Changed
 - Save format v3: every decal gets a stable ID and a "placed by" name. Older saves load fine and get new IDs.
