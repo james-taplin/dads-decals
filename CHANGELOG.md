@@ -10,6 +10,9 @@ All notable changes to Dad's Decals. Versions follow [semantic versioning](https
 - Levers, valves, switches, doors and gauges are left out, so a decal doesn't stay behind while the part moves through it.
 - Diagnostics report the cab interior: whether it's loaded and how many parts can take decals.
 
+### Fixed
+- **Decals reappeared floating in front of the loco with the high beam on** (seen on the DH4: a number on the hood showed again about half a metre out, by the railing). The headlight beams are cone-shaped meshes that switch on with the lights, and decals near a lamp were drawn on them too. Headlight beams, lamp glare and other effect meshes are no longer decal targets.
+
 ## [0.3.3] - 2026-10-11
 
 ### Fixed

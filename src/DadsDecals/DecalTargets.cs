@@ -154,9 +154,16 @@ namespace DadsDecals
             // Every detail level (LOD) is a target: the projection works on any mesh, and only the
             // level being shown is visible, so decals stay on when a car switches to its low-detail
             // model in the distance instead of popping off.
-            // Particle-ish / glass-ish materials make poor decal targets.
+            // Headlight beams (Volumetric Light Beam cones): switched on with the lights, they reach
+            // out in front of the lamps, and a decal near a lamp got drawn on the beam too, floating
+            // in mid-air. Their renderer can be inactive when targets are gathered, hence the walk.
+            if (r.GetComponent<VLB.BeamGeometry>() != null) return true;
+            for (var t = r.transform; t != null; t = t.parent)
+                if (t.GetComponent<VLB.VolumetricLightBeam>() != null) return true;
+            // Particle-ish / glass-ish / effect materials make poor decal targets.
             var shader = r.sharedMaterial != null && r.sharedMaterial.shader != null ? r.sharedMaterial.shader.name : "";
-            if (shader.StartsWith("Particles/") || shader.StartsWith("Unlit/") || shader.Contains("Window") || shader.Contains("Smoke") || shader == "TransparencyWithFog") return true;
+            if (shader.StartsWith("Particles/") || shader.StartsWith("Unlit/") || shader.StartsWith("Hidden/") || shader.Contains("Window") || shader.Contains("Smoke") ||
+                shader.Contains("VolumetricLightBeam") || shader.Contains("SpriteLight") || shader == "TransparencyWithFog") return true;
             return false;
         }
     }
