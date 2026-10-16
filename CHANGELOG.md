@@ -2,7 +2,7 @@
 
 All notable changes to Dad's Decals. Versions follow [semantic versioning](https://semver.org/); dates are YYYY-MM-DD.
 
-## [0.4.0] - unreleased (in development on the `interiors` branch)
+## [0.4.0] - 2026-10-16
 
 ### Added
 - **Decals in the cab.** Place decals on cab interior walls, ceilings, backheads and dashes. Point at them from inside the cab with the panel open, as you would outside. They come back when you walk away and return (DV loads the interior only when you're near), and they're saved with the car like any other decal.

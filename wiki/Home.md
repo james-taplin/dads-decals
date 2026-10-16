@@ -10,7 +10,7 @@ Dad's Decals lets you put decals on any Derail Valley loco, tender or wagon: num
 | Page | What's in it |
 |---|---|
 | [Installation](Installation.md) | Requirements, installing, updating, uninstalling |
-| [Placing decals](Placing-Decals.md) | The panel, the Place tab, aiming, Keep level, snapping, mirroring |
+| [Placing decals](Placing-Decals.md) | The panel, the Place tab, aiming, Keep level, snapping, mirroring, decals in the cab |
 | [Editing decals](Editing-Decals.md) | Selecting, moving, changing settings, attaching to bogies, undo |
 | [Text and road numbers](Text-and-Road-Numbers.md) | Text decals, fonts, outlines and auto-numbering tokens |
 | [Colour, finish and weathering](Colour-Finish-and-Weathering.md) | Tint, colour picker, finish presets, glow, grime, chipping |
