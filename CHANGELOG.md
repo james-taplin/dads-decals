@@ -2,7 +2,7 @@
 
 All notable changes to Dad's Decals. Versions follow [semantic versioning](https://semver.org/); dates are YYYY-MM-DD.
 
-## [0.4.1] - unreleased
+## [0.4.1] - 2026-10-18
 
 ### Fixed
 - **Decals cut off or missing behind invisible geometry** (from 0.3.3). The "stop at the first surface" check also counted parts that weren't being drawn: a car's simplified low-detail models, the low-detail cab while the full interior is loaded, and see-through cutout parts. Where one of those sat in front of the real surface, the decal behind it was hidden. On the S282's tender rear it only appeared on the ladder; in cabs it worked in some spots and not others. The check now uses only the solid, full-detail parts you can actually see.

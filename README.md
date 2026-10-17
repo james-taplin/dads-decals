@@ -4,7 +4,7 @@ A Derail Valley mod for putting decals on locomotives, tenders and wagons: road 
 
 ![An S060 tank engine covered in decals: anime stickers, cats, stripes, placards and rosy glowing cheeks on the smokebox](docs/images/showcase-s060-side.webp)
 
-**Status: stable (v0.4.0).** Please report problems on the [issue tracker](https://github.com/james-taplin/dads-decals/issues).
+**Status: stable (v0.4.1).** Please report problems on the [issue tracker](https://github.com/james-taplin/dads-decals/issues).
 
 ## Features
 - **Works on any car**: vanilla and custom (CCL) locos, tenders and wagons. Loco authors don't need to do anything.
