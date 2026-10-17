@@ -2,6 +2,14 @@
 
 All notable changes to Dad's Decals. Versions follow [semantic versioning](https://semver.org/); dates are YYYY-MM-DD.
 
+## [0.4.1] - unreleased
+
+### Fixed
+- **Decals cut off or missing behind invisible geometry** (from 0.3.3). The "stop at the first surface" check also counted parts that weren't being drawn: a car's simplified low-detail models, the low-detail cab while the full interior is loaded, and see-through cutout parts. Where one of those sat in front of the real surface, the decal behind it was hidden. On the S282's tender rear it only appeared on the ladder; in cabs it worked in some spots and not others. The check now uses only the solid, full-detail parts you can actually see.
+- **Aiming in cabs stopped on invisible boxes.** The aim stopped at any collider, including the grab boxes around levers and handles, teleport spots and the car's big outer collision hull, so a decal could land on an invisible box in front of the wall. Aiming now goes through those to the real surface behind them (up to 1.5 m), and only uses them when there's nothing else.
+- Decals are no longer drawn on cutout or see-through parts (ladders, grilles), where they ignored the holes, or on shadow-only meshes, which are invisible.
+- The Debug tab's *Aiming at* line now shows the collider's layer.
+
 ## [0.4.0] - 2026-10-16
 
 ### Added

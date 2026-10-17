@@ -237,7 +237,8 @@ namespace DadsDecals
                 }
                 var m = r.localToWorldMatrix;
                 for (var sub = 0; sub < t.Mesh.subMeshCount; sub++)
-                    Graphics.DrawMesh(t.Mesh, m, material, r.gameObject.layer, viewCamera, sub, mpb, ShadowCastingMode.Off, true);
+                    if (t.Opaque[sub])
+                        Graphics.DrawMesh(t.Mesh, m, material, r.gameObject.layer, viewCamera, sub, mpb, ShadowCastingMode.Off, true);
                 draws++;
             }
             RenderStats.Decal(draws);
@@ -323,7 +324,11 @@ namespace DadsDecals
             cmd.ClearRenderTarget(false, true, Color.white);
             foreach (var t in overlap.Parts)
             {
-                if (t.Renderer == null || t.Anchor == null) continue;
+                // Only what's really there to see: the highest detail level, parts switched on, and
+                // solid submeshes. Anything else (a simplified LOD shell, the low-detail cab while
+                // the full interior is loaded, a cutout ladder) could sit in front of the real
+                // surface and hide the decal.
+                if (t.Anchor == null || !t.ShownNow || t.LowerDetail) continue;
                 var m = t.Renderer.localToWorldMatrix;
                 // Each part in its own frame (body, bogie or cab interior), so interior and outside
                 // parts land in the same picture. Recorded per draw: the command buffer copies the
@@ -331,7 +336,8 @@ namespace DadsDecals
                 var worldToDecal = (t.Anchor.localToWorldMatrix * local).inverse;
                 depthProperties.SetMatrix(ObjectToDecalId, worldToDecal * m);
                 for (var sub = 0; sub < t.Mesh.subMeshCount; sub++)
-                    cmd.DrawMesh(t.Mesh, m, depthMaterial, sub, 0, depthProperties);
+                    if (t.Opaque[sub])
+                        cmd.DrawMesh(t.Mesh, m, depthMaterial, sub, 0, depthProperties);
             }
             Graphics.ExecuteCommandBuffer(cmd);
         }

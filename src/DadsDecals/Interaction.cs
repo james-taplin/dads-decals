@@ -399,26 +399,46 @@ namespace DadsDecals
             var path = car.interior != null && t.IsChildOf(car.interior)
                 ? "interior/" + Diagnostics.Path(car.interior, t)
                 : Diagnostics.Path(car.transform, t);
-            return $"{car.ID} / {path} ({hit.collider.GetType().Name}), {hit.distance:0.0} m";
+            return $"{car.ID} / {path} ({hit.collider.GetType().Name}, layer {LayerMask.LayerToName(hit.collider.gameObject.layer)}), {hit.distance:0.0} m";
         }
 
-        /// <summary>Nearest hit on a train car along the ray (only <paramref name="only"/> if given).</summary>
+        // Colliders that aren't the surface you see (DV.Layers): the car's big simplified hull
+        // (Train_Big_Collider), grab boxes around levers and handles (Interactable), teleport spots,
+        // laser-pointer targets and camera volumes. Aiming used to stop on them, so in cabs a decal
+        // often landed on an invisible box in front of the wall and never reached it.
+        private const int StandInLayers = (1 << 10) | (1 << 13) | (1 << 14) | (1 << 15) | (1 << 16);
+        // How far behind a stand-in a real surface may be and still win.
+        private const float StandInReach = 1.5f;
+
+        /// <summary>Nearest hit on a train car along the ray (only <paramref name="only"/> if given), preferring real surfaces.</summary>
         private static bool RaycastAnyCar(Ray ray, TrainCar? only, out RaycastHit result, out TrainCar? car)
         {
             result = default;
             car = null;
             var hits = Physics.RaycastAll(ray, 80f, ~0, QueryTriggerInteraction.Ignore);
-            var best = float.MaxValue;
+            RaycastHit surface = default, standIn = default;
+            TrainCar? surfaceCar = null, standInCar = null;
             foreach (var h in hits)
             {
-                if (h.distance >= best) continue;
                 // Resolve also finds the car for colliders in its cab interior, a separate object.
                 var c = TrainCar.Resolve(h.collider.gameObject);
                 if (c == null || c.logicCar == null) continue;
                 if (only != null && c != only) continue;
-                best = h.distance;
-                result = h;
-                car = c;
+                if ((StandInLayers & (1 << h.collider.gameObject.layer)) != 0)
+                {
+                    if (standInCar == null || h.distance < standIn.distance) { standIn = h; standInCar = c; }
+                }
+                else if (surfaceCar == null || h.distance < surface.distance) { surface = h; surfaceCar = c; }
+            }
+            if (surfaceCar != null && (standInCar == null || surface.distance <= standIn.distance + StandInReach))
+            {
+                result = surface;
+                car = surfaceCar;
+            }
+            else if (standInCar != null)
+            {
+                result = standIn;
+                car = standInCar;
             }
             return car != null;
         }
