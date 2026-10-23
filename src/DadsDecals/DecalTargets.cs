@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 namespace DadsDecals
@@ -20,13 +21,34 @@ namespace DadsDecals
         /// </summary>
         public readonly Transform Anchor;
 
-        public DecalTarget(MeshRenderer renderer, Mesh mesh, Transform anchor)
+        /// <summary>Per submesh: drawn solid. Cutout and transparent submeshes (ladders, grilles, glass) get no decal.</summary>
+        public readonly bool[] Opaque;
+
+        /// <summary>
+        /// A lower detail level (LOD1, LOD2...). Decals are drawn on it, but it's left out of the
+        /// first-surface picture: simplified shells sit in front of the real surface in places
+        /// (a flat panel level with the ladder on a tender's rear), which hid the decal.
+        /// </summary>
+        public readonly bool LowerDetail;
+
+        public DecalTarget(MeshRenderer renderer, Mesh mesh, Transform anchor, bool lowerDetail)
         {
             Renderer = renderer;
             Mesh = mesh;
             LocalBounds = DecalTargets.UsedBounds(mesh);
             Anchor = anchor;
+            LowerDetail = lowerDetail;
+            var materials = renderer.sharedMaterials;
+            Opaque = new bool[mesh.subMeshCount];
+            for (var i = 0; i < Opaque.Length; i++)
+                Opaque[i] = materials.Length == 0 || DecalTargets.IsOpaque(materials[Mathf.Min(i, materials.Length - 1)]);
         }
+
+        /// <summary>
+        /// Is the part actually being drawn solid right now? Switched-off objects (e.g. the low-detail
+        /// cab while the full interior is loaded) are left out of the first-surface picture.
+        /// </summary>
+        public bool ShownNow => Renderer != null && Renderer.enabled && !Renderer.forceRenderingOff && Renderer.gameObject.activeInHierarchy;
     }
 
     internal static class DecalTargets
@@ -76,7 +98,7 @@ namespace DadsDecals
                 if (f == null || f.sharedMesh == null) continue;
                 if (IsExcluded(r, Diagnostics.Path(root, r.transform))) continue;
                 var anchor = bogies.FirstOrDefault(b => r.transform.IsChildOf(b)) ?? root;
-                list.Add(new DecalTarget(r, f.sharedMesh, anchor));
+                list.Add(new DecalTarget(r, f.sharedMesh, anchor, IsLowerDetail(r, Diagnostics.Path(root, r.transform))));
             }
 
             // The cab interior: loaded when you're near (plus the outside handles and doors), so
@@ -87,11 +109,42 @@ namespace DadsDecals
                 {
                     var f = r.GetComponent<MeshFilter>();
                     if (f == null || f.sharedMesh == null) continue;
-                    if (IsExcluded(r, Diagnostics.Path(interior, r.transform)) || IsMovingPart(r.transform, interior)) continue;
-                    list.Add(new DecalTarget(r, f.sharedMesh, interior));
+                    var path = Diagnostics.Path(interior, r.transform);
+                    if (IsExcluded(r, path) || IsMovingPart(r.transform, interior)) continue;
+                    list.Add(new DecalTarget(r, f.sharedMesh, interior, IsLowerDetail(r, path)));
                 }
             }
             return list;
+        }
+
+        private static readonly Regex LodName = new Regex(@"lod[1-9]", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
+        /// <summary>
+        /// Not the highest detail level: a LODGroup that lists it only below LOD0, or (for models
+        /// switched by name, like DV's LOD0/LOD1 children) "LOD1", "LOD2"... in its path.
+        /// </summary>
+        private static bool IsLowerDetail(MeshRenderer r, string path)
+        {
+            for (var t = r.transform; t != null; t = t.parent)
+            {
+                var group = t.GetComponent<LODGroup>();
+                if (group == null) continue;
+                var lods = group.GetLODs();
+                if (lods.Length > 1 && System.Array.IndexOf(lods[0].renderers, r) < 0 && lods.Any(l => System.Array.IndexOf(l.renderers, r) >= 0))
+                    return true;
+                break;
+            }
+            return LodName.IsMatch(path);
+        }
+
+        /// <summary>Drawn solid: not alpha-tested (cutout) or blended. A decal can't follow a cutout's holes.</summary>
+        public static bool IsOpaque(Material? m)
+        {
+            if (m == null) return true;
+            if (m.renderQueue >= 2450) return false;   // AlphaTest and later
+            if (m.IsKeywordEnabled("_ALPHATEST_ON") || m.IsKeywordEnabled("_ALPHABLEND_ON") || m.IsKeywordEnabled("_ALPHAPREMULTIPLY_ON")) return false;
+            var type = m.GetTag("RenderType", false);
+            return type != "TransparentCutout" && type != "Transparent";
         }
 
         /// <summary>
@@ -151,6 +204,8 @@ namespace DadsDecals
             // [interior LOD] (the low-detail cab shown while the interior isn't loaded) is a target, so
             // cab decals stay visible through the windows from outside.
             if (p.Contains("broken") || p.Contains("[car plate") || p.Contains("textmeshpro")) return true;
+            // Shadow-only meshes are invisible; a decal on one floated in mid-air.
+            if (r.shadowCastingMode == UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly) return true;
             // Every detail level (LOD) is a target: the projection works on any mesh, and only the
             // level being shown is visible, so decals stay on when a car switches to its low-detail
             // model in the distance instead of popping off.
