@@ -18,6 +18,12 @@ First step of multiplayer support for [Derail Valley Multiplayer](https://github
 
 ### Changed
 - Save format v3: every decal gets a stable ID and a "placed by" name. Older saves load fine and get new IDs.
+## [0.4.2] - 2026-10-29
+
+### Fixed
+- **A stream of NullReferenceExceptions** (`Mesh.get_subMeshCount` in `DecalRenderer.Draw`), seen after leaving the caboose. The game can destroy a part's mesh while the part itself stays, and Dad's Decals kept trying to draw a decal on the missing mesh every frame. Such parts are now skipped, and the car's parts are re-read on the next frame.
+- **"Getting control n's position in a group with only n controls"** errors from the Decal toolbox, when selecting a decal or starting to place made it change what it shows mid-frame. It now waits for the next frame instead.
+
 ## [0.4.1] - 2026-10-18
 
 ### Fixed
