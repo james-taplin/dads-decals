@@ -2,7 +2,9 @@
 
 All notable changes to Dad's Decals. Versions follow [semantic versioning](https://semver.org/); dates are YYYY-MM-DD.
 
-## [0.5.0-alpha.1] - not released yet (multiplayer test build, `multiplayer` branch)
+## [0.5.0-alpha.2] - 2026-10-29 (multiplayer alpha)
+
+First public multiplayer alpha, built on 0.4.2. (0.5.0-alpha.1 was a private tester build.)
 
 First step of multiplayer support for [Derail Valley Multiplayer](https://github.com/AMacro/dv-multiplayer) (0.1.16+). Single player is unchanged.
 

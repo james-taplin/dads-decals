@@ -47,7 +47,7 @@ namespace DadsDecals
             }
         }
 
-        /// <summary>Guests can't place or edit yet (0.5.0-alpha.1): they see the host's decals.</summary>
+        /// <summary>Guests can't place or edit yet (0.5.0 alpha): they see the host's decals.</summary>
         public static bool ReadOnly => Role == SyncRole.Client;
 
         /// <summary>Set by the bridge while hosting: send one car's layout to every guest that said hello.</summary>

@@ -1,4 +1,4 @@
-# Dad's Decals multiplayer test (0.5.0-alpha.1)
+# Dad's Decals multiplayer alpha (0.5.0-alpha.2)
 
 Thanks for testing! This is an **early test build** of multiplayer support for [Derail Valley Multiplayer](https://github.com/AMacro/dv-multiplayer). Expect rough edges, and please don't use it on a save you'd hate to lose. Back the save up first.
 
@@ -14,9 +14,9 @@ Everyone who wants to see decals needs:
 1. [Unity Mod Manager](https://www.nexusmods.com/site/mods/21)
 2. [Mod Toolbar](https://github.com/imagitama/derail-valley-mod-toolbar)
 3. [Derail Valley Multiplayer](https://github.com/AMacro/dv-multiplayer/releases) **0.1.16.0-Beta** (this build is made for that version)
-4. **Dad's Decals 0.5.0-alpha.1** (`DadsDecals-0.5.0-alpha.1.zip`): install with UMM like any mod, replacing any older Dad's Decals.
+4. **Dad's Decals 0.5.0-alpha.2** (`DadsDecals-0.5.0-alpha.2-MULTIPLAYER-ALPHA.zip`): install with UMM like any mod, replacing any older Dad's Decals.
 
-To check it's installed: open UMM (Ctrl+F10). **Dad's Decals** should show version **0.5.0** with a green dot.
+To check it's installed: open UMM (Ctrl+F10). **Dad's Decals (multiplayer alpha)** should show version **0.5.0** with a green dot.
 
 ## Things to try
 You don't have to do all of these. Anything you notice is useful.
@@ -72,6 +72,6 @@ Send the debug zip (or the files above, zipped), plus screenshots or a short cli
 - **What happened**, and **roughly what time**? The logs are timestamped.
 - **What you expected** to happen.
 
-Send it to James, or attach it to an issue at <https://github.com/james-taplin/dads-decals/issues> (put "multiplayer" in the title).
+Post it in the Dad's Decals bugs section on Nexus Mods, or attach it to an issue at <https://github.com/james-taplin/dads-decals/issues> (put "multiplayer" in the title).
 
 > **Privacy:** `Player.log` can include your Steam name, your Windows user name (in folder paths) and other players' names. That's fine to send to James privately. If you post it in a public GitHub issue, have a quick look first and remove anything you'd rather not share.

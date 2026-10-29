@@ -9,7 +9,7 @@ using UnityEngine;
 namespace DadsDecals.Multiplayer
 {
     /// <summary>
-    /// The network side of multiplayer sync (0.5.0-alpha.1): handshake, host snapshot and live
+    /// The network side of multiplayer sync (0.5.0 alpha): handshake, host snapshot and live
     /// host updates. Guests are read-only in this build. Loaded by Sync.TryLoadBridge only when the
     /// Multiplayer mod is installed and enabled.
     /// </summary>

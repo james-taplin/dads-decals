@@ -3,7 +3,7 @@
 $ErrorActionPreference = "Stop"
 $repo = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $src = Join-Path $repo "src\DadsDecals"
-# Zip name: the full version from the csproj (e.g. 0.5.0-alpha.1); info.json holds the plain number UMM reads.
+# Zip name: the full version from the csproj (e.g. 0.5.0-alpha.2); info.json holds the plain number UMM reads.
 $version = [regex]::Match((Get-Content (Join-Path $src "DadsDecals.csproj") -Raw), '<Version>([^<]+)</Version>').Groups[1].Value
 if (-not $version) { throw "No <Version> in DadsDecals.csproj" }
 
@@ -24,7 +24,9 @@ $guide = Join-Path $repo "docs\MULTIPLAYER-TESTING.md"
 if ($version -match "-" -and (Test-Path $guide)) { Copy-Item $guide $stage }
 Copy-Item (Join-Path $repo "examples\Decals") (Join-Path $stage "Decals") -Recurse
 
-$zip = Join-Path $repo "dist\DadsDecals-$version.zip"
+# Multiplayer alphas are labelled in the file name so nobody mistakes them for a stable release.
+$label = if ($version -match "alpha") { "-MULTIPLAYER-ALPHA" } else { "" }
+$zip = Join-Path $repo "dist\DadsDecals-$version$label.zip"
 if (Test-Path $zip) { [IO.File]::Delete($zip) }
 # Built entry by entry: ZipFile.CreateFromDirectory on .NET Framework writes backslash paths,
 # which some unzippers and mod installers mishandle.
