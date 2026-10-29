@@ -226,6 +226,13 @@ namespace DadsDecals
                 var r = t.Renderer;
                 // isVisible is false for detail levels (LODs) not currently shown, and for parts off screen.
                 if (r == null || !r.enabled || !r.isVisible || !r.gameObject.activeInHierarchy) continue;
+                if (t.Mesh == null)
+                {
+                    // The game destroyed this part's mesh while the part lives on (seen leaving the
+                    // caboose): skip it, and re-read the car's parts next frame.
+                    if (refreshTargetsAt == 0) refreshTargetsAt = Time.frameCount + 1;
+                    continue;
+                }
                 if (t.Anchor != frame)
                 {
                     // The box in this part's frame (the body, or the cab interior lined up with it).
@@ -328,7 +335,7 @@ namespace DadsDecals
                 // solid submeshes. Anything else (a simplified LOD shell, the low-detail cab while
                 // the full interior is loaded, a cutout ladder) could sit in front of the real
                 // surface and hide the decal.
-                if (t.Anchor == null || !t.ShownNow || t.LowerDetail) continue;
+                if (t.Anchor == null || t.Mesh == null || !t.ShownNow || t.LowerDetail) continue;
                 var m = t.Renderer.localToWorldMatrix;
                 // Each part in its own frame (body, bogie or cab interior), so interior and outside
                 // parts land in the same picture. Recorded per draw: the command buffer copies the

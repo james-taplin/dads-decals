@@ -39,6 +39,7 @@ namespace DadsDecals
         private static readonly GUILayoutOption Fit = GUILayout.ExpandWidth(false);
         private bool settingsWanted;        // last automatic open/close decision for the settings window
         private bool settingsPlaced;
+        private object? settingsLayoutKey;   // see DrawSettings
         private readonly Dictionary<string, string> numberEdits = new Dictionary<string, string>();
 
         private static Interaction I => Interaction.Instance!;
@@ -138,16 +139,28 @@ namespace DadsDecals
         public void DrawSettings(Rect rect)
         {
             EnsureStyles();
-            // Follows the main window: closing that closes this too.
-            if (PanelWindows.Main != null && !PanelWindows.Main.Visible) { PanelWindows.Settings?.Hide(); return; }
-
+            var mainShown = PanelWindows.Main == null || PanelWindows.Main.Visible;
             var car = CurrentCar;
             var layout = car != null ? Main.Layouts.Get(car.CarGUID) : null;
+            var sel = I.Selected;
+            var editing = I.Mode == ToolMode.Edit && sel != null && car != null && layout != null && I.SelectedCar == car && layout.Decals.Contains(sel);
+
+            // IMGUI lays a window out on the Layout event and expects the same controls on the event
+            // that follows. The main window can run in between (selecting a decal, starting to place,
+            // opening this window), and drawing a different set of controls threw "Getting control
+            // n's position in a group with only n controls". So if what this window would show has
+            // changed since Layout, skip this event; the next frame lays it out afresh.
+            var key = (mainShown, editing, editing ? sel : null, I.Mode, editing ? sel!.Kind : I.Template.Kind, car);
+            if (Event.current.type == EventType.Layout) settingsLayoutKey = key;
+            else if (!key.Equals(settingsLayoutKey)) return;
+
+            // Follows the main window: closing that closes this too.
+            if (!mainShown) { PanelWindows.Settings?.Hide(); return; }
+
             TrackGesture(layout);
             GUILayout.BeginVertical(panelStyle, GUILayout.MinHeight(Mathf.Max(100f, rect.height - 40f)));
 
-            var sel = I.Selected;
-            if (I.Mode == ToolMode.Edit && sel != null && car != null && layout != null && I.SelectedCar == car && layout.Decals.Contains(sel))
+            if (editing && sel != null && car != null && layout != null)
             {
                 GUILayout.Label($"<b>Selected</b>  {Safe(sel.DisplayName)}", RichLabel);
                 if (!DrawSelectedActions(car, layout, sel))
