@@ -54,6 +54,13 @@ namespace DadsDecals
         {
             Dispose();
             foreach (var file in Directory.GetFiles(root, "*.png", SearchOption.AllDirectories))
+                LoadOne(file);
+            Main.Log.Log($"Loaded {images.Count} decal image(s) from {root}");
+        }
+
+        /// <summary>Loads (or reloads) one PNG under the Decals folder, e.g. a picture downloaded in multiplayer.</summary>
+        public void LoadOne(string file)
+        {
             {
                 try
                 {
@@ -63,8 +70,9 @@ namespace DadsDecals
                     {
                         UnityEngine.Object.Destroy(tex);
                         Main.Log.Warning($"Could not read {key}");
-                        continue;
+                        return;
                     }
+                    if (images.TryGetValue(key, out var old)) old.Destroy();
                     if (tex.width > MaxSize || tex.height > MaxSize)
                         Main.Log.Warning($"{key} is {tex.width}x{tex.height}; images over {MaxSize}px will be downscaled in a later version");
                     tex.name = key;
@@ -86,7 +94,6 @@ namespace DadsDecals
                     Main.Log.LogException($"Loading {file}", e);
                 }
             }
-            Main.Log.Log($"Loaded {images.Count} decal image(s) from {root}");
         }
 
         public void Dispose()

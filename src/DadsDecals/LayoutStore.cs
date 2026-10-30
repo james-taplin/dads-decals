@@ -199,10 +199,11 @@ namespace DadsDecals
         public void ForgetOrphan(LocoLayout orphan) => orphans.Remove(orphan);
 
         /// <summary>Replaces (or adds) a whole layout, e.g. one received from a multiplayer host.</summary>
-        public void Put(LocoLayout layout)
+        public LocoLayout Put(LocoLayout layout, bool keepUndo = false)
         {
             layouts[layout.CarGuid] = layout;
-            Undo.Forget(layout.CarGuid);
+            if (!keepUndo) Undo.Forget(layout.CarGuid);
+            return layout;
         }
 
         /// <summary>Drops a car's layout without keeping it as an orphan (multiplayer guests: the host keeps orphans).</summary>

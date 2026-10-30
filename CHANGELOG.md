@@ -2,6 +2,19 @@
 
 All notable changes to Dad's Decals. Versions follow [semantic versioning](https://semver.org/); dates are YYYY-MM-DD.
 
+## [0.5.1-beta] - 2026-10-30 (multiplayer beta)
+
+### Added
+- **Everyone can place and edit decals in multiplayer**, guests included. Each player's changes go to the host when they let go of the mouse, and the host sends the result to everyone. The host's game is the referee: if two people change the same car at the same moment, the later change is turned down, that player's car goes back to the agreed version, and their panel says why.
+- **Pictures are shared.** A PNG that other players don't have is sent to them automatically, in small pieces checked against its fingerprint (up to 2 MB per picture). Received pictures are cached in `Decals/_Multiplayer` and kept out of the palette.
+- **Host settings in UMM** (Ctrl+F10 → Dad's Decals): **Guests can place and edit decals** (untick for view only), and **Block** a player by picking a guest or typing a name. Blocked players can't place or edit, and everything they placed is removed.
+- **Who placed it:** new decals remember the player who placed them (used for blocking).
+- Updates from other players no longer drop your selection, and they wait until you finish a drag.
+
+### Changed
+- Multiplayer protocol 2: players on 0.5.0 alphas can still join, but their decals stay on their own screen until they update.
+- UMM shows **Dad's Decals (multiplayer beta)**.
+
 ## [0.5.0-alpha.2] - 2026-10-29 (multiplayer alpha)
 
 First public multiplayer alpha, built on 0.4.2. (0.5.0-alpha.1 was a private tester build.)

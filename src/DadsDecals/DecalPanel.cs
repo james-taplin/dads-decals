@@ -84,12 +84,13 @@ namespace DadsDecals
 
             if (Sync.Role != SyncRole.Offline && Sync.Status.Length > 0)
                 GUILayout.Label("Multiplayer: " + Sync.Status);
+            if (Sync.CurrentNotice.Length > 0)
+                GUILayout.Label(Sync.CurrentNotice);
 
-            // 0.5.0 alpha: guests see the host's decals but can't change them yet.
+            // A guest the host set to view only, or blocked: they see the decals but can't change them.
             if (Sync.ReadOnly && tab != 3)
             {
-                GUILayout.Label("You're a guest in this game, so you're seeing the host's decals. " +
-                                "Placing and editing as a guest is coming in a later test build.");
+                GUILayout.Label(Sync.ReadOnlyReason);
                 return;
             }
 
@@ -330,7 +331,8 @@ namespace DadsDecals
                 GUILayout.Label($"No PNGs yet. Put some in:\n{Main.DecalsDir}");
 
             var perRow = Mathf.Max(1, (int)((width - 20f) / (ThumbSize + 6f)));
-            foreach (var group in Main.Library.Images.GroupBy(i => i.Category).OrderBy(g => g.Key))
+            // Pictures downloaded from other players in multiplayer stay out of the palette.
+            foreach (var group in Main.Library.Images.Where(i => !i.Key.StartsWith(Sync.CacheFolder + "/")).GroupBy(i => i.Category).OrderBy(g => g.Key))
             {
                 var items = group.OrderBy(i => i.Name).ToList();
                 if (!Section("cat:" + group.Key, $"{(group.Key.Length > 0 ? group.Key : "General")}  ({items.Count})")) continue;

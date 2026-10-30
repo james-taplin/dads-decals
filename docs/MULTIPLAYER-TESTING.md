@@ -1,37 +1,43 @@
-# Dad's Decals multiplayer alpha (0.5.0-alpha.2)
+# Dad's Decals multiplayer beta (0.5.1-beta)
 
-Thanks for testing! This is an **early test build** of multiplayer support for [Derail Valley Multiplayer](https://github.com/AMacro/dv-multiplayer). Expect rough edges, and please don't use it on a save you'd hate to lose. Back the save up first.
+Thanks for testing! This is a **beta** of multiplayer support for [Derail Valley Multiplayer](https://github.com/AMacro/dv-multiplayer). Expect rough edges, and please don't use it on a save you'd hate to lose. Back the save up first.
 
 ## What this build does
 - **Everyone can play together.** Players with and without Dad's Decals can join each other's games.
-- **Guests see the host's decals.** When you join, the host's decals appear on their cars. When the host places, moves or changes a decal, everyone with Dad's Decals sees it within a second or so.
-- **Guests can only look in this build.** Placing and editing as a guest comes in a later test build. The panel tells you this.
-- **Not yet: custom pictures.** Guests only see the host's image decals if they have the same picture files. Everyone has the example decals that come with the mod, and text decals always work. Custom PNGs the host added are listed as "missing" in the multiplayer log. Sending pictures between players is the next build.
-- **Older versions:** if you join with Dad's Decals older than 0.5, you can still join. You'll get a whispered chat message saying your version isn't supported in multiplayer.
+- **Everyone with Dad's Decals can place and edit decals.** That includes guests, and changes show up for everyone within a second or so.
+  - The host's game is the referee. If two people change the same car at the same moment, one change is turned down, and the panel says so. Just have another go.
+  - New decals remember who placed them.
+- **Pictures are shared.** If you use a PNG the others don't have, it's sent to them automatically (up to 2 MB per picture). Received pictures are kept in `Mods\DadsDecals\Decals\_Multiplayer` and don't clutter your palette.
+- **The host is in charge.** The host's settings are in UMM (Ctrl+F10) → **Dad's Decals** → the settings button:
+  - **Guests can place and edit decals.** Untick this to make it view only.
+  - **Block** a player. They can't place or edit any more, and everything they placed is removed. You can pick from the guests in the game or type a name.
+- **Older versions:** players on Dad's Decals before 0.5 can still join, and get a polite chat message saying their version isn't supported in multiplayer. Players on 0.5.0 alphas can join, but their decals stay on their own screen until they update.
 
 ## Install
-Everyone who wants to see decals needs:
+Everyone who wants to see and place decals needs:
 1. [Unity Mod Manager](https://www.nexusmods.com/site/mods/21)
 2. [Mod Toolbar](https://github.com/imagitama/derail-valley-mod-toolbar)
 3. [Derail Valley Multiplayer](https://github.com/AMacro/dv-multiplayer/releases) **0.1.16.0-Beta** (this build is made for that version)
-4. **Dad's Decals 0.5.0-alpha.2** (`DadsDecals-0.5.0-alpha.2-MULTIPLAYER-ALPHA.zip`): install with UMM like any mod, replacing any older Dad's Decals.
+4. **Dad's Decals 0.5.1-beta** (`DadsDecals-0.5.1-beta-MULTIPLAYER-BETA.zip`): install with UMM like any mod, replacing any older Dad's Decals.
 
-To check it's installed: open UMM (Ctrl+F10). **Dad's Decals (multiplayer alpha)** should show version **0.5.0** with a green dot.
+To check it's installed: open UMM (Ctrl+F10). **Dad's Decals (multiplayer beta)** should show version **0.5.1** with a green dot.
 
 ## Things to try
 You don't have to do all of these. Anything you notice is useful.
 
 - [ ] **Host:** put a few decals on a loco (example images and some text), then have someone join. Do they see them, in the right places?
-- [ ] **Host:** move, resize, recolour and delete decals while guests watch. Does it update for them? Roughly how long does it take?
-- [ ] **Host:** use **Undo**, **Clear all**, apply a **template**, and **Copy from another car in this save**. Does each one reach the guests?
-- [ ] **Host:** put decals inside a cab (0.4 feature). Do guests see them when they get in?
+- [ ] **Guest:** place, move, resize, recolour and delete decals. Does the host (and everyone else) see it? Roughly how long does it take?
+- [ ] **Everyone:** two people edit the same car at once. Does it sort itself out, and does everyone end up seeing the same thing?
+- [ ] **Custom pictures:** someone uses a PNG the others don't have. Does it turn up for everyone?
+- [ ] **Host:** untick **Guests can place and edit decals**, then tick it again. Do guests get told, and does it work?
+- [ ] **Host:** block a guest, then unblock them. Their decals should vanish when blocked, and they should be able to place again after.
+- [ ] **Undo**, **Clear all**, **templates**, **Copy from another car in this save**, layers and mirror, as host and as guest.
+- [ ] **Cab decals** (inside a cab), as host and as guest.
 - [ ] **Guest:** leave and rejoin. Are the decals still right?
 - [ ] **Guest joins late,** after lots of decorated cars exist (10+ is great).
-- [ ] **The host deletes or despawns a decorated car** while a guest is near it.
+- [ ] **The host saves, quits and reloads.** Is everything guests placed still there?
 - [ ] **A player without Dad's Decals joins.** They should join normally and just not see decals.
-- [ ] **A player with an older Dad's Decals (0.3.x or 0.4.x) joins.** They should get in, and see a polite chat message.
-- [ ] **Host without Dad's Decals:** a guest with it should see "decals you place stay on your screen only" in the panel.
-- [ ] **Single player still works as normal** for everyone (place, edit, undo, layers, save and reload).
+- [ ] **Single player still works as normal** for everyone.
 
 ## After a session, or as soon as something goes wrong
 

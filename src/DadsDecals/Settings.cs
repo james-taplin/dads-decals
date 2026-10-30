@@ -16,6 +16,12 @@ namespace DadsDecals
         /// <summary>Decals further than this from the camera aren't drawn (metres; 0 = no limit).</summary>
         public float MaxDistance;
 
+        // Multiplayer: only used when you host a Derail Valley Multiplayer game.
+        /// <summary>Guests may place and edit decals (off: they can only look).</summary>
+        public bool GuestsCanEdit = true;
+        /// <summary>Usernames who can't place or edit; their decals are removed.</summary>
+        public List<string> BlockedPlayers = new List<string>();
+
         public override void Save(UnityModManager.ModEntry modEntry) => Save(this, modEntry);
     }
 }

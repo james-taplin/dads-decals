@@ -24,8 +24,8 @@ $guide = Join-Path $repo "docs\MULTIPLAYER-TESTING.md"
 if ($version -match "-" -and (Test-Path $guide)) { Copy-Item $guide $stage }
 Copy-Item (Join-Path $repo "examples\Decals") (Join-Path $stage "Decals") -Recurse
 
-# Multiplayer alphas are labelled in the file name so nobody mistakes them for a stable release.
-$label = if ($version -match "alpha") { "-MULTIPLAYER-ALPHA" } else { "" }
+# Multiplayer alphas/betas are labelled in the file name so nobody mistakes them for a stable release.
+$label = if ($version -match "alpha") { "-MULTIPLAYER-ALPHA" } elseif ($version -match "beta") { "-MULTIPLAYER-BETA" } else { "" }
 $zip = Join-Path $repo "dist\DadsDecals-$version$label.zip"
 if (Test-Path $zip) { [IO.File]::Delete($zip) }
 # Built entry by entry: ZipFile.CreateFromDirectory on .NET Framework writes backslash paths,

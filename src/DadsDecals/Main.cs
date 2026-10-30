@@ -46,6 +46,8 @@ namespace DadsDecals
                     .Finish();
 
                 modEntry.OnUnload = Unload;
+                modEntry.OnGUI = SettingsGui.Draw;
+                modEntry.OnSaveGUI = e => Settings.Save(e);
                 Log.Log("Loaded");
             }
             catch (Exception e)
